@@ -38,6 +38,7 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 - [ ] execute a shell command
 - [ ] Colors, RGBtoHex, js names to colors
 - [ ] WKB/WKT/GeoJSON
+- [ ] Skip entries
 
 ## Real workflows
 - from clipboard, unescape json, parse json, prettryfier, colorize
@@ -90,3 +91,10 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 - to imgur render image
 - to geojson.io
 - to s2 map https://s2.inair.space/
+
+### Unicode
+- code to unicode
+- name to unicode
+
+## TODO
+- hex dump
