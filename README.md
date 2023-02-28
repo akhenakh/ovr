@@ -35,6 +35,8 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 - [ ] Filter fields, select values
 - [ ] output to a configurable filename, xxx-%Y%m%d.txt
 - [ ] execute a shell command
+- [ ] Colors, RGBtoHex, js names to colors
+- [ ] WKB/WKT/GeoJSON
 
 ## Real workflows
 - from clipboard, unescape json, parse json, prettryfier, colorize
@@ -67,12 +69,18 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 - https://github.com/TomWright/dasel
 - JMESPATH https://jmespath.org/
 - https://github.com/tidwall/gjson
+- https://github.com/tidwall/sjson
 
 ## Inspirations
 - https://github.com/IvanMathy/Boop
+- https://open-vsx.org/extension/qcz/text-power-tools
 
 ## Crazy Ideas
 
 ### Geography 
 - display GeoJSON as a map
 - Find Centroid
+
+### Online
+- to pastebin
+- to imgur render image
