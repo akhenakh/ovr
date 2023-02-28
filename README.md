@@ -10,14 +10,17 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 
 
 ## Format
+- Text
+- Lines
 - CSV
 - JSON
+- YAML
 - TOML
 - Images
 
 ## Transformations
 
-- [ ] to upper/lower
+- [X] to upper/lower
 - [ ] Title
 - [ ] CamelCase
 - [ ] encoding from/to (b64, hex ...)
