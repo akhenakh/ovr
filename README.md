@@ -30,6 +30,7 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 - [ ] JWT decode, known payloads (GeoJSON, AWS...), logs severity, golang stack, java stack...
 - [ ] Minify 
 - [ ] sort by a column/property
+- [ ] Add/Set value
 - [ ] dedup
 - [ ] conversion (json, csv, yaml)
 - [ ] Filter fields, select values
@@ -74,13 +75,18 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 ## Inspirations
 - https://github.com/IvanMathy/Boop
 - https://open-vsx.org/extension/qcz/text-power-tools
+- https://github.com/d-akara/vscode-extension-transformer
 
 ## Crazy Ideas
 
 ### Geography 
 - display GeoJSON as a map
 - Find Centroid
+- to/from s2
+- to/from h3
 
 ### Online
 - to pastebin
 - to imgur render image
+- to geojson.io
+- to s2 map https://s2.inair.space/
