@@ -18,15 +18,18 @@ func TestAction_TextTransform(t *testing.T) {
 		{"upper", "hello", "HELLO", false},
 		{"lower", "HELLO", "hello", false},
 		{"hex", "48454c4c4f", "HELLO", false},
+		{"hex", "gg", "HELLO", true},
 		{"tohex", "HELLO", "48454c4c4f", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.action, func(t *testing.T) {
 			got, err := r.TextAction(tt.action, []byte(tt.in))
-			if !tt.wantErr {
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
 				require.NoError(t, err)
+				require.Equal(t, tt.want, string(got))
 			}
-			require.Equal(t, tt.want, string(got))
 		})
 	}
 }

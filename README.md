@@ -3,7 +3,7 @@
 A CLI tool to pipe anything into and apply transformations with an advanced UI.
 
 ## Features
-
+- Fuzzy search for block names
 - Parse text, chain & transform
 - Known formats (multiline, csv, json ..) filtering, transforming
 - Plot 
@@ -13,7 +13,9 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 ## Inputs Outputs
 - from/to clipboard
 - stdin
+- editor https://github.com/charmbracelet/bubbletea/tree/master/examples/textarea
 - file?
+
 
 ## Format
 
@@ -93,7 +95,15 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 
 - https://lnav.org/
 
-### Transform 
+## Search
+
+- https://github.com/Vivino/go-autocomplete-trie
+
+## Markdown
+
+- https://github.com/yuin/goldmark
+
+### Transform
 
 - https://github.com/TomWright/dasel
 - JMESPATH https://jmespath.org/
