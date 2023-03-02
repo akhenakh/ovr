@@ -60,6 +60,7 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 - [ ] Colors, RGBtoHex, js names to colors
 - [ ] WKB/WKT/GeoJSON
 - [ ] Skip entries
+- [ ] Time timezone
 
 ## Real workflows
 

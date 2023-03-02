@@ -180,6 +180,6 @@ func main() {
 	}
 
 	if m, ok := m.(model); ok {
-		fmt.Printf("\n---\n%s\n", string(m.out))
+		fmt.Printf("\n---\n%s\n", string(m.in))
 	}
 }
