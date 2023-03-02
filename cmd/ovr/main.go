@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"golang.design/x/clipboard"
 )
 
 var (
@@ -170,9 +172,25 @@ func (m model) View() string {
 }
 
 func main() {
-	stdin, _ := io.ReadAll(os.Stdin)
+	readStdin := flag.Bool("s", false, "Use Stdin as input")
 
-	p := tea.NewProgram(newModel(stdin))
+	flag.Parse()
+
+	err := clipboard.Init()
+	if err != nil {
+		panic(err)
+	}
+
+	var input []byte
+
+	if *readStdin {
+		stdin, _ := io.ReadAll(os.Stdin)
+		input = stdin
+	} else {
+		input = []byte(clipboard.Read(clipboard.FmtText))
+	}
+
+	p := tea.NewProgram(newModel(input))
 	m, err := p.Run()
 	if err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
