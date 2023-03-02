@@ -41,7 +41,7 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 - [X] to upper/lower
 - [ ] Title
 - [ ] CamelCase
-- [ ] encoding from/to (b64, hex ...)
+- [X] encoding from/to (b64, hex ...)
 - [ ] hashes
 - [ ] count inputs
 - [ ] time parse transform, epoch 
@@ -61,6 +61,7 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 - [ ] WKB/WKT/GeoJSON
 - [ ] Skip entries
 - [ ] Time timezone
+- [ ] to qrcode
 
 ## Real workflows
 

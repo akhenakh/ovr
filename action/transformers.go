@@ -1,6 +1,7 @@
 package action
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"strings"
 )
@@ -27,6 +28,28 @@ var lowerAction = Action{
 	},
 }
 
+var fromBase64StringAction = Action{
+	Doc:          "Returns the bytes represented by the base64 of the input",
+	Names:        []string{"base64"},
+	Type:         TransformAction,
+	InputFormat:  text,
+	OutputFormat: text,
+	Func: func(in []byte) ([]byte, error) {
+		return base64.StdEncoding.DecodeString(string(in))
+	},
+}
+
+var toBase64StringAction = Action{
+	Doc:          "Returns the base64 encoding of input",
+	Names:        []string{"tobase64"},
+	Type:         TransformAction,
+	InputFormat:  text,
+	OutputFormat: text,
+	Func: func(in []byte) ([]byte, error) {
+		return []byte(base64.StdEncoding.EncodeToString(in)), nil
+	},
+}
+
 var fromHexStringAction = Action{
 	Doc:          "Returns the bytes represented by the hexadecimal input, expects that input contains only hexadecimal",
 	Names:        []string{"hex"},
@@ -39,7 +62,7 @@ var fromHexStringAction = Action{
 }
 
 var toHexStringAction = Action{
-	Doc:          "encode binary to hex string",
+	Doc:          "Returns the hexadecimal encoding of the input",
 	Names:        []string{"tohex"},
 	Type:         TransformAction,
 	InputFormat:  text,

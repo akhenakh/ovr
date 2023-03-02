@@ -10,7 +10,7 @@ type ActionRegistry struct {
 	m map[string]*Action
 }
 
-var all = []Action{upperAction, lowerAction, toHexStringAction, fromHexStringAction}
+var all = []Action{upperAction, lowerAction, toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction}
 
 func NewRegistry() *ActionRegistry {
 	m := make(map[string]*Action)

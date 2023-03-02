@@ -18,8 +18,10 @@ func TestAction_TextTransform(t *testing.T) {
 		{"upper", "hello", "HELLO", false},
 		{"lower", "HELLO", "hello", false},
 		{"hex", "48454c4c4f", "HELLO", false},
-		{"hex", "gg", "HELLO", true},
+		{action: "hex", in: "gg", want: "HELLO", wantErr: true},
 		{"tohex", "HELLO", "48454c4c4f", false},
+		{action: "base64", in: "aGVsbG8=", want: "hello", wantErr: false},
+		{action: "tobase64", in: "hello", want: "aGVsbG8=", wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.action, func(t *testing.T) {
