@@ -6,7 +6,7 @@ import (
 )
 
 var upperAction = Action{
-	Doc:          "transform text to uppercase",
+	Doc:          "Transforms input with all Unicode letters mapped to their upper case",
 	Names:        []string{"upper"},
 	Type:         TransformAction,
 	InputFormat:  text,
@@ -17,7 +17,7 @@ var upperAction = Action{
 }
 
 var lowerAction = Action{
-	Doc:          "transform text to lowercase",
+	Doc:          "Transforms input with all Unicode letters mapped to their lower case",
 	Names:        []string{"lower"},
 	Type:         TransformAction,
 	InputFormat:  text,
@@ -28,7 +28,7 @@ var lowerAction = Action{
 }
 
 var fromHexStringAction = Action{
-	Doc:          "decode hex string",
+	Doc:          "Returns the bytes represented by the hexadecimal input, expects that input contains only hexadecimal",
 	Names:        []string{"hex"},
 	Type:         TransformAction,
 	InputFormat:  text,

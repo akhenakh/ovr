@@ -34,3 +34,15 @@ var (
 func (a *Action) TextTransform(in []byte) ([]byte, error) {
 	return a.Func(in)
 }
+
+func (a *Action) Title() string {
+	return a.Names[0]
+}
+
+func (a *Action) Description() string {
+	return a.Doc
+}
+
+func (a *Action) FilterValue() string {
+	return a.Title()
+}
