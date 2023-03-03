@@ -35,3 +35,27 @@ func TestAction_TextTransform(t *testing.T) {
 		})
 	}
 }
+
+func TestAction_TextTimeTransform(t *testing.T) {
+	r := NewRegistry()
+
+	tests := []struct {
+		action  string
+		in      string
+		want    string
+		wantErr bool
+	}{
+		{"jsondate", "2012-04-23T18:25:43Z", "2012-04-23 18:25:43 +0000 UTC", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.action, func(t *testing.T) {
+			got, err := r.TextTimeAction(tt.action, []byte(tt.in))
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got.String())
+			}
+		})
+	}
+}

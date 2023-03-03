@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/akhenakh/ovr/action"
 	"github.com/charmbracelet/bubbles/key"
@@ -71,7 +72,7 @@ type model struct {
 	delegateKeys *delegateKeyMap
 	in           []byte
 	stack        []*action.Action
-	out          []byte
+	out          any
 }
 
 func newModel(in []byte) model {
@@ -166,25 +167,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// reapplying the stack
 			m.out = m.in
 			for _, a := range m.stack {
-				out, err := a.TextTransform(m.out)
+
+				out, err := a.Transform(m.out)
 				if err != nil { // we should not have errors in the stack
 					m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
 					return m, nil
 				}
 				m.out = out
 			}
-			m.list.Title = fmt.Sprintf("Text Input: %s", strings.TrimRight(string(m.out), "\r\n"))
+			m.list.Title = fmt.Sprintf("Text Input: %s", strings.TrimRight(stringValue(m.out), "\r\n"))
 			return m, nil
 
 		case msg.String() == "enter":
 			a, ok := m.list.SelectedItem().(*action.Action)
 			if ok {
-				out, err := a.TextTransform(m.out)
+				out, err := a.Transform(m.out)
 				if err != nil {
 					m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
 					return m, nil
 				}
-				m.list.Title = fmt.Sprintf("Text Input: %s", strings.TrimRight(string(out), "\r\n"))
+				m.list.Title = fmt.Sprintf("Text Input: %s", strings.TrimRight(stringValue(out), "\r\n"))
 				m.stack = append(m.stack, a)
 				m.out = out
 			}
@@ -234,6 +236,17 @@ func main() {
 		for i, a := range m.stack {
 			names[i] = a.Title()
 		}
-		fmt.Printf("%s\n---\n%s\n", strings.Join(names, ","), string(m.out))
+		fmt.Printf("%s\n---\n%s\n", strings.Join(names, ","), stringValue(m.out))
+	}
+}
+
+func stringValue(in any) string {
+	switch t := in.(type) {
+	case []byte:
+		return string(t)
+	case time.Time:
+		return t.String()
+	default:
+		return ""
 	}
 }
