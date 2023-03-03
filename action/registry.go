@@ -13,7 +13,7 @@ type ActionRegistry struct {
 
 var all = []Action{
 	upperAction, lowerAction, toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
-	ParseJSONDateStringAction,
+	parseJSONDateStringAction,
 }
 
 func NewRegistry() *ActionRegistry {

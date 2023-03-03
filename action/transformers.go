@@ -40,8 +40,8 @@ var fromBase64StringAction = Action{
 	},
 }
 
-var ParseJSONDateStringAction = Action{
-	Doc:          "Parse a JSON ISO JSON 8601 from input",
+var parseJSONDateStringAction = Action{
+	Doc:          "Parse JSON ISO 8601 from input",
 	Names:        []string{"jsondate"},
 	Type:         TransformAction,
 	InputFormat:  textFormat,

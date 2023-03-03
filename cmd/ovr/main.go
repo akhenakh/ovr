@@ -167,7 +167,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// reapplying the stack
 			m.out = m.in
 			for _, a := range m.stack {
-
 				out, err := a.Transform(m.out)
 				if err != nil { // we should not have errors in the stack
 					m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
@@ -175,7 +174,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.out = out
 			}
-			m.list.Title = fmt.Sprintf("Text Input: %s", strings.TrimRight(stringValue(m.out), "\r\n"))
+			m.list.Title = fmt.Sprintf("%s: %s", a.InputFormat.Name, strings.TrimRight(stringValue(m.out), "\r\n"))
 			return m, nil
 
 		case msg.String() == "enter":
@@ -186,7 +185,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
 					return m, nil
 				}
-				m.list.Title = fmt.Sprintf("Text Input: %s", strings.TrimRight(stringValue(out), "\r\n"))
+				m.list.Title = fmt.Sprintf("%s: %s", a.OutputFormat.Name, strings.TrimRight(stringValue(out), "\r\n"))
 				m.stack = append(m.stack, a)
 				m.out = out
 			}
