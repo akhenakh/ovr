@@ -4,6 +4,7 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 
 ## Features
 - Fuzzy search for block names
+- Apply actions, cancel actions using backspace
 - Parse text, chain & transform
 - Known formats (multiline, csv, json ..) filtering, transforming
 - Plot 

@@ -36,6 +36,7 @@ type listKeyMap struct {
 	toggleStatusBar  key.Binding
 	togglePagination key.Binding
 	toggleHelpMenu   key.Binding
+	removeAction     key.Binding
 }
 
 func newListKeyMap() *listKeyMap {
@@ -56,6 +57,10 @@ func newListKeyMap() *listKeyMap {
 			key.WithKeys("H"),
 			key.WithHelp("H", "toggle help"),
 		),
+		removeAction: key.NewBinding(
+			key.WithKeys("backspace", "d"),
+			key.WithHelp("backspace", "undo last action"),
+		),
 	}
 }
 
@@ -65,6 +70,7 @@ type model struct {
 	keys         *listKeyMap
 	delegateKeys *delegateKeyMap
 	in           []byte
+	stack        []*action.Action
 	out          []byte
 }
 
@@ -94,6 +100,7 @@ func newModel(in []byte) model {
 			listKeys.toggleStatusBar,
 			listKeys.togglePagination,
 			listKeys.toggleHelpMenu,
+			listKeys.removeAction,
 		}
 	}
 
@@ -103,6 +110,7 @@ func newModel(in []byte) model {
 		keys:         listKeys,
 		delegateKeys: delegateKeys,
 		in:           in,
+		out:          in,
 	}
 }
 
@@ -144,17 +152,41 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.toggleHelpMenu):
 			m.list.SetShowHelp(!m.list.ShowHelp())
 			return m, nil
+
+		case key.Matches(msg, m.keys.removeAction):
+			if len(m.stack) == 0 {
+				m.list.NewStatusMessage(errorMessageStyle("stack is empty"))
+				return m, nil
+			}
+
+			var a *action.Action
+
+			a, m.stack = m.stack[len(m.stack)-1], m.stack[:len(m.stack)-1]
+			m.list.NewStatusMessage(statusMessageStyle("Removed action: " + a.Title()))
+			// reapplying the stack
+			m.out = m.in
+			for _, a := range m.stack {
+				out, err := a.TextTransform(m.out)
+				if err != nil { // we should not have errors in the stack
+					m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
+					return m, nil
+				}
+				m.out = out
+			}
+			m.list.Title = fmt.Sprintf("Text Input: %s", strings.TrimRight(string(m.out), "\r\n"))
+			return m, nil
+
 		case msg.String() == "enter":
 			a, ok := m.list.SelectedItem().(*action.Action)
 			if ok {
-				out, err := a.TextTransform(m.in)
+				out, err := a.TextTransform(m.out)
 				if err != nil {
 					m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
 					return m, nil
 				}
 				m.list.Title = fmt.Sprintf("Text Input: %s", strings.TrimRight(string(out), "\r\n"))
-
-				m.in = out
+				m.stack = append(m.stack, a)
+				m.out = out
 			}
 		}
 	}
@@ -198,6 +230,10 @@ func main() {
 	}
 
 	if m, ok := m.(model); ok {
-		fmt.Printf("\n---\n%s\n", string(m.in))
+		names := make([]string, len(m.stack))
+		for i, a := range m.stack {
+			names[i] = a.Title()
+		}
+		fmt.Printf("%s\n---\n%s\n", strings.Join(names, ","), string(m.out))
 	}
 }
