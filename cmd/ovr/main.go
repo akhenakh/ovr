@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/akhenakh/ovr/action"
 	"github.com/charmbracelet/bubbles/key"
@@ -71,8 +70,7 @@ type model struct {
 	keys         *listKeyMap
 	delegateKeys *delegateKeyMap
 	in           []byte
-	stack        []*action.Action
-	out          any
+	out          *action.Data
 }
 
 func newModel(in []byte) model {
@@ -111,7 +109,7 @@ func newModel(in []byte) model {
 		keys:         listKeys,
 		delegateKeys: delegateKeys,
 		in:           in,
-		out:          in,
+		out:          action.NewDataText(in),
 	}
 }
 
@@ -155,26 +153,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case key.Matches(msg, m.keys.removeAction):
-			if len(m.stack) == 0 {
-				m.list.NewStatusMessage(errorMessageStyle("stack is empty"))
+			d, oa, err := m.out.Undo(m.in)
+			if err != nil { // we should not have errors in the stack
+				m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
 				return m, nil
 			}
+			m.out = d
+			m.list.NewStatusMessage(statusMessageStyle("Removed action: " + oa.Title()))
 
-			var a *action.Action
-
-			a, m.stack = m.stack[len(m.stack)-1], m.stack[:len(m.stack)-1]
-			m.list.NewStatusMessage(statusMessageStyle("Removed action: " + a.Title()))
-			// reapplying the stack
-			m.out = m.in
-			for _, a := range m.stack {
-				out, err := a.Transform(m.out)
-				if err != nil { // we should not have errors in the stack
-					m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
-					return m, nil
-				}
-				m.out = out
-			}
-			m.list.Title = fmt.Sprintf("%s: %s", a.InputFormat.Name, strings.TrimRight(stringValue(m.out), "\r\n"))
+			m.list.Title = fmt.Sprintf("%s: %s", m.out.Format.Name, strings.TrimRight(m.out.String(), "\r\n"))
 			return m, nil
 
 		case msg.String() == "enter":
@@ -185,8 +172,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
 					return m, nil
 				}
-				m.list.Title = fmt.Sprintf("%s: %s", a.OutputFormat.Name, strings.TrimRight(stringValue(out), "\r\n"))
-				m.stack = append(m.stack, a)
+				m.list.Title = fmt.Sprintf("updated %s: %s", out.Format.Name, strings.TrimRight(out.String(), "\r\n"))
+				// m.stack = append(m.stack, a)
 				m.out = out
 			}
 		}
@@ -205,7 +192,7 @@ func (m model) View() string {
 }
 
 func main() {
-	readStdin := flag.Bool("s", false, "Use Stdin as input")
+	readStdin := flag.Bool("s", false, "Use Stdin as input, default to clipboard")
 
 	flag.Parse()
 
@@ -231,21 +218,11 @@ func main() {
 	}
 
 	if m, ok := m.(model); ok {
-		names := make([]string, len(m.stack))
-		for i, a := range m.stack {
-			names[i] = a.Title()
-		}
-		fmt.Printf("%s\n---\n%s\n", strings.Join(names, ","), stringValue(m.out))
-	}
-}
+		fmt.Printf("%s\n---\n%s\n", m.out.StackString(), m.out.String())
 
-func stringValue(in any) string {
-	switch t := in.(type) {
-	case []byte:
-		return string(t)
-	case time.Time:
-		return t.String()
-	default:
-		return ""
+		// putting output in clipboard
+		if !*readStdin {
+			clipboard.Write(clipboard.FmtText, []byte(m.out.String()))
+		}
 	}
 }

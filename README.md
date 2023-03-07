@@ -142,4 +142,5 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 
 ## TODO
 
+- add a time action, then filter by time action when the type is time
 - hex dump
