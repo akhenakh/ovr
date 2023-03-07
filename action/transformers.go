@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"io"
+	"strconv"
 	"time"
 
 	"golang.org/x/text/cases"
@@ -50,6 +51,29 @@ var titleAction = Action{
 		caser := cases.Title(language.Und)
 		titleStr := caser.String(string(in.([]byte)))
 		return []byte(titleStr), nil
+	},
+}
+
+var quoteAction = Action{
+	Doc:          "Quotes string with escape characters",
+	Names:        []string{"quote"},
+	Type:         TransformAction,
+	InputFormat:  textFormat,
+	OutputFormat: textFormat,
+	Func: func(in any) (any, error) {
+		return []byte(strconv.Quote(string(in.([]byte)))), nil
+	},
+}
+
+var unquoteAction = Action{
+	Doc:          "Removes quotes from escaped characters",
+	Names:        []string{"unquote"},
+	Type:         TransformAction,
+	InputFormat:  textFormat,
+	OutputFormat: textFormat,
+	Func: func(in any) (any, error) {
+		unescape, err := strconv.Unquote(string(in.([]byte)))
+		return []byte(unescape), err
 	},
 }
 
