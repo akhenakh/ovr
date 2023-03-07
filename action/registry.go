@@ -12,7 +12,9 @@ type ActionRegistry struct {
 }
 
 var all = []Action{
-	upperAction, lowerAction, titleAction, toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
+	upperAction, lowerAction, titleAction,
+	md5HashAction, sha1HashAction, sha256HashAction, sha512HashAction,
+	toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
 	parseJSONDateStringAction,
 }
 

@@ -40,10 +40,10 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 ## Transformations
 
 - [X] to upper/lower
-- [ ] Title
+- [X] Title
 - [ ] CamelCase
 - [X] encoding from/to (b64, hex ...)
-- [ ] hashes
+- [X] hashes
 - [ ] count inputs
 - [ ] time parse transform, epoch 
 - [ ] duration add substract

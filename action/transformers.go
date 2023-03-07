@@ -1,8 +1,13 @@
 package action
 
 import (
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
+	"io"
 	"time"
 
 	"golang.org/x/text/cases"
@@ -45,6 +50,58 @@ var titleAction = Action{
 		caser := cases.Title(language.Und)
 		titleStr := caser.String(string(in.([]byte)))
 		return []byte(titleStr), nil
+	},
+}
+
+var md5HashAction = Action{
+	Doc:          "MD5 checksum of the data to hex string",
+	Names:        []string{"md5"},
+	Type:         TransformAction,
+	InputFormat:  textFormat,
+	OutputFormat: textFormat,
+	Func: func(in any) (any, error) {
+		h := md5.New()
+		io.WriteString(h, string(in.([]byte)))
+		return []byte(hex.EncodeToString(h.Sum(nil))), nil
+	},
+}
+
+var sha1HashAction = Action{
+	Doc:          "SHA1 checksum of the data to hex string",
+	Names:        []string{"sha1"},
+	Type:         TransformAction,
+	InputFormat:  textFormat,
+	OutputFormat: textFormat,
+	Func: func(in any) (any, error) {
+		h := sha1.New()
+		io.WriteString(h, string(in.([]byte)))
+		return []byte(hex.EncodeToString(h.Sum(nil))), nil
+	},
+}
+
+var sha256HashAction = Action{
+	Doc:          "SHA256 checksum of the data to hex string",
+	Names:        []string{"sha256"},
+	Type:         TransformAction,
+	InputFormat:  textFormat,
+	OutputFormat: textFormat,
+	Func: func(in any) (any, error) {
+		h := sha256.New()
+		io.WriteString(h, string(in.([]byte)))
+		return []byte(hex.EncodeToString(h.Sum(nil))), nil
+	},
+}
+
+var sha512HashAction = Action{
+	Doc:          "SHA512 checksum of the data to hex string",
+	Names:        []string{"sha512"},
+	Type:         TransformAction,
+	InputFormat:  textFormat,
+	OutputFormat: textFormat,
+	Func: func(in any) (any, error) {
+		h := sha512.New()
+		io.WriteString(h, string(in.([]byte)))
+		return []byte(hex.EncodeToString(h.Sum(nil))), nil
 	},
 }
 
