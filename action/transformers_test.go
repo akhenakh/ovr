@@ -16,7 +16,8 @@ func TestAction_TextTransform(t *testing.T) {
 		wantErr bool
 	}{
 		{"upper", "hello", "HELLO", false},
-		{"lower", "HELLO", "hello", false},
+		{action: "lower", in: "HELLO", want: "hello", wantErr: false},
+		{action: "title", in: "HELLO", want: "Hello", wantErr: false},
 		{"hex", "48454c4c4f", "HELLO", false},
 		{action: "hex", in: "gg", want: "HELLO", wantErr: true},
 		{"tohex", "HELLO", "48454c4c4f", false},

@@ -3,8 +3,10 @@ package action
 import (
 	"encoding/base64"
 	"encoding/hex"
-	"strings"
 	"time"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var upperAction = Action{
@@ -14,7 +16,9 @@ var upperAction = Action{
 	InputFormat:  textFormat,
 	OutputFormat: textFormat,
 	Func: func(in any) (any, error) {
-		return []byte(strings.ToUpper(string(in.([]byte)))), nil
+		caser := cases.Upper(language.Und)
+		upper := caser.String(string(in.([]byte)))
+		return []byte(upper), nil
 	},
 }
 
@@ -25,7 +29,22 @@ var lowerAction = Action{
 	InputFormat:  textFormat,
 	OutputFormat: textFormat,
 	Func: func(in any) (any, error) {
-		return []byte(strings.ToLower(string(in.([]byte)))), nil
+		caser := cases.Lower(language.Und)
+		lower := caser.String(string(in.([]byte)))
+		return []byte(lower), nil
+	},
+}
+
+var titleAction = Action{
+	Doc:          "Transforms input title",
+	Names:        []string{"title"},
+	Type:         TransformAction,
+	InputFormat:  textFormat,
+	OutputFormat: textFormat,
+	Func: func(in any) (any, error) {
+		caser := cases.Title(language.Und)
+		titleStr := caser.String(string(in.([]byte)))
+		return []byte(titleStr), nil
 	},
 }
 
