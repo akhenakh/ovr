@@ -210,7 +210,7 @@ var estTimeAction = Action{
 
 var utcTimeAction = Action{
 	Doc:          "Change time to UTC timezone",
-	Names:        []string{"est"},
+	Names:        []string{"utc"},
 	Type:         TransformAction,
 	InputFormat:  timeFormat,
 	OutputFormat: timeFormat,

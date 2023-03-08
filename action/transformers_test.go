@@ -36,6 +36,15 @@ func (r *ActionRegistry) TextTimeAction(action string, in []byte) (time.Time, er
 	return ab.(time.Time), err
 }
 
+func (r *ActionRegistry) TimeTextAction(action string, in time.Time) ([]byte, error) {
+	a, ok := r.m[timeFormat.Prefix+","+action]
+	if !ok {
+		return nil, fmt.Errorf("action %s does not exist for time input", action)
+	}
+	ab, err := a.Func(in)
+	return ab.([]byte), err
+}
+
 func (r *ActionRegistry) TimeAction(action string, in time.Time) (time.Time, error) {
 	a, ok := r.m[timeFormat.Prefix+","+action]
 	if !ok {
@@ -102,6 +111,70 @@ func TestAction_TextTimeTransform(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, tt.want, got.String())
+			}
+		})
+	}
+}
+
+func TestAction_TimeTransform(t *testing.T) {
+	r := NewRegistry()
+
+	tests := []struct {
+		action  string
+		in      time.Time
+		want    string
+		wantErr bool
+	}{
+		{
+			"utc",
+			time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
+			"2009-11-10 23:00:00 +0000 UTC",
+			false,
+		},
+		{
+			"est",
+			time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
+			"2009-11-10 18:00:00 -0500 EST",
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.action, func(t *testing.T) {
+			got, err := r.TimeAction(tt.action, tt.in)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got.String())
+			}
+		})
+	}
+}
+
+func TestAction_TimeTextTransform(t *testing.T) {
+	r := NewRegistry()
+
+	tests := []struct {
+		action  string
+		in      time.Time
+		want    string
+		wantErr bool
+	}{
+		{
+			"iso",
+			time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
+			"2009-11-10T23:00:00Z",
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.action, func(t *testing.T) {
+			got, err := r.TimeTextAction(tt.action, tt.in)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.want, string(got))
 			}
 		})
 	}
