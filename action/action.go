@@ -30,51 +30,52 @@ var (
 	textFormat = Format{"text", "t"}
 	binFormat  = Format{"bin", "b"}
 	timeFormat = Format{"time", "T"}
+	jsonFormat = Format{"json", "j"}
 )
 
 func (a *Action) Transform(in *Data) (*Data, error) {
-	switch {
-	case a.InputFormat == textFormat && a.OutputFormat == textFormat:
-		d, err := a.textTransform(in)
-		return d, err
-	case a.InputFormat == textFormat && a.OutputFormat == timeFormat:
-		return a.textTimeTransform(in)
-	case a.InputFormat == timeFormat && a.OutputFormat == timeFormat:
-		return a.timeTransform(in)
+	var data any
+	var err error
+
+	switch a.InputFormat {
+	case textFormat:
+		if len(in.RawValue) == 0 {
+			return nil, fmt.Errorf("value is empty")
+		}
+		data, err = a.Func(in.RawValue)
+		if err != nil {
+			return nil, err
+		}
+
+	case timeFormat:
+		_, ok := in.Value.(time.Time)
+		if !ok {
+			return nil, fmt.Errorf("input not a time.Time")
+		}
+		data, err = a.Func(in.Value)
+		if !ok {
+			return nil, err
+		}
 	default:
-		return nil, fmt.Errorf("unknwon format")
+		return nil, fmt.Errorf("unknown input format")
 	}
-}
 
-func (a *Action) textTransform(in *Data) (*Data, error) {
-	ab, err := a.Func(in.RawValue)
-	b, ok := ab.([]byte)
-	if !ok {
-		return nil, fmt.Errorf("function does not return []byte")
+	switch a.OutputFormat {
+	case textFormat:
+		b, ok := data.([]byte)
+		if !ok {
+			return nil, fmt.Errorf("function does not return []byte")
+		}
+		return in.StoreTextValue(b, a), err
+	case timeFormat:
+		b, ok := data.(time.Time)
+		if !ok {
+			return nil, fmt.Errorf("function does not return a time.Time")
+		}
+		return in.StoreTimeValue(b, a), err
+	default:
+		return nil, fmt.Errorf("unknown output format")
 	}
-	return in.StoreTextValue(b, a), err
-}
-
-func (a *Action) textTimeTransform(in *Data) (*Data, error) {
-	ab, err := a.Func(in.RawValue)
-	b, ok := ab.(time.Time)
-	if !ok {
-		return nil, fmt.Errorf("function does not return a time.Time")
-	}
-	return in.StoreTimeValue(b, a), err
-}
-
-func (a *Action) timeTransform(in *Data) (*Data, error) {
-	t, ok := in.Value.(time.Time)
-	if !ok {
-		return nil, fmt.Errorf("input not a time.Time")
-	}
-	at, err := a.Func(t)
-	ot, ok := at.(time.Time)
-	if !ok {
-		return nil, fmt.Errorf("function does not return a time.Time")
-	}
-	return in.StoreTimeValue(ot, a), err
 }
 
 func (a *Action) Title() string {

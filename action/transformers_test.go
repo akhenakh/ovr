@@ -1,10 +1,49 @@
 package action
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
+
+func (r *ActionRegistry) TextAction(action string, in []byte) ([]byte, error) {
+	a, ok := r.m[textFormat.Prefix+","+action]
+	if !ok {
+		return nil, fmt.Errorf("action %s does not exist for text input", action)
+	}
+
+	ab, err := a.Func(in)
+	return ab.([]byte), err
+}
+
+func (r *ActionRegistry) BinAction(action string, in []byte) ([]byte, error) {
+	a, ok := r.m[binFormat.Prefix+","+action]
+	if !ok {
+		return nil, fmt.Errorf("action %s does not exist for bin input", action)
+	}
+	ab, err := a.Func(in)
+	return ab.([]byte), err
+}
+
+func (r *ActionRegistry) TextTimeAction(action string, in []byte) (time.Time, error) {
+	a, ok := r.m[textFormat.Prefix+","+action]
+	if !ok {
+		return time.Time{}, fmt.Errorf("action %s does not exist for text input", action)
+	}
+	ab, err := a.Func(in)
+	return ab.(time.Time), err
+}
+
+func (r *ActionRegistry) TimeAction(action string, in time.Time) (time.Time, error) {
+	a, ok := r.m[timeFormat.Prefix+","+action]
+	if !ok {
+		return time.Time{}, fmt.Errorf("action %s does not exist for time input", action)
+	}
+	ab, err := a.Func(in)
+	return ab.(time.Time), err
+}
 
 func TestAction_TextTransform(t *testing.T) {
 	r := NewRegistry()

@@ -47,7 +47,7 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 - [ ] count inputs
 - [ ] time parse transform, epoch 
 - [ ] duration add substract
-- [ ] escape unescape
+- [X] escape unescape
 - [ ] reformat input, prettifie
 - [ ] JWT decode, known payloads (GeoJSON, AWS...), logs severity, golang stack, java stack...
 - [ ] Minify 

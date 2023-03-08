@@ -34,6 +34,10 @@ func (d *Data) StoreTimeValue(t time.Time, a *Action) *Data {
 	return &Data{Value: t, Stack: append(d.Stack, a), Format: timeFormat}
 }
 
+func (d *Data) StoreJSONValue(t time.Time, a *Action) *Data {
+	return &Data{Value: t, Stack: append(d.Stack, a), Format: jsonFormat}
+}
+
 // Undo removed the last actions if any
 // Reapply the stack with input
 func (d *Data) Undo(in []byte) (*Data, *Action, error) {
