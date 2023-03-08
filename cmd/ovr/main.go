@@ -163,6 +163,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.list.NewStatusMessage(statusMessageStyle("Removed action: " + oa.Title()))
 
 			m.list.Title = fmt.Sprintf("%s: %s", m.out.Format.Name, strings.TrimRight(m.out.String(), "\r\n"))
+
+			m.list.ResetFilter()
+
+			actions := m.r.ActionsForData(m.out)
+			items := make([]list.Item, len(actions))
+			for i := 0; i < len(actions); i++ {
+				items[i] = actions[i]
+			}
+			m.list.SetItems(items)
+
 			return m, nil
 
 		case msg.String() == "enter":
@@ -175,6 +185,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.list.Title = fmt.Sprintf("%s: %s", out.Format.Name, strings.TrimRight(out.String(), "\r\n"))
 				m.out = out
+
+				m.list.ResetFilter()
 
 				actions := m.r.ActionsForData(m.out)
 				items := make([]list.Item, len(actions))
