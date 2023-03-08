@@ -7,12 +7,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/akhenakh/ovr/action"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"golang.design/x/clipboard"
+
+	"github.com/akhenakh/ovr/action"
 )
 
 var (
@@ -172,9 +173,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
 					return m, nil
 				}
-				m.list.Title = fmt.Sprintf("updated %s: %s", out.Format.Name, strings.TrimRight(out.String(), "\r\n"))
-				// m.stack = append(m.stack, a)
+				m.list.Title = fmt.Sprintf("%s: %s", out.Format.Name, strings.TrimRight(out.String(), "\r\n"))
 				m.out = out
+
+				actions := m.r.ActionsForData(m.out)
+				items := make([]list.Item, len(actions))
+				for i := 0; i < len(actions); i++ {
+					items[i] = actions[i]
+				}
+				m.list.SetItems(items)
 			}
 		}
 	}

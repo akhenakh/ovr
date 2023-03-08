@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"io"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/text/cases"
@@ -51,6 +52,17 @@ var titleAction = Action{
 		caser := cases.Title(language.Und)
 		titleStr := caser.String(string(in.([]byte)))
 		return []byte(titleStr), nil
+	},
+}
+
+var trimSpaceAction = Action{
+	Doc:          "Trim spaces from input",
+	Names:        []string{"trimspace"},
+	Type:         TransformAction,
+	InputFormat:  textFormat,
+	OutputFormat: textFormat,
+	Func: func(in any) (any, error) {
+		return []byte(strings.TrimSpace(string(in.([]byte)))), nil
 	},
 }
 
@@ -181,5 +193,40 @@ var toHexStringAction = Action{
 	OutputFormat: textFormat,
 	Func: func(in any) (any, error) {
 		return []byte(hex.EncodeToString(in.([]byte))), nil
+	},
+}
+
+var estTimeAction = Action{
+	Doc:          "Change time to EST timezone",
+	Names:        []string{"est"},
+	Type:         TransformAction,
+	InputFormat:  timeFormat,
+	OutputFormat: timeFormat,
+	Func: func(in any) (any, error) {
+		est, _ := time.LoadLocation("EST")
+		return in.(time.Time).In(est), nil
+	},
+}
+
+var utcTimeAction = Action{
+	Doc:          "Change time to UTC timezone",
+	Names:        []string{"est"},
+	Type:         TransformAction,
+	InputFormat:  timeFormat,
+	OutputFormat: timeFormat,
+	Func: func(in any) (any, error) {
+		est, _ := time.LoadLocation("UTC")
+		return in.(time.Time).In(est), nil
+	},
+}
+
+var isoTimeAction = Action{
+	Doc:          "time to ISO RFC3339 text",
+	Names:        []string{"iso"},
+	Type:         TransformAction,
+	InputFormat:  timeFormat,
+	OutputFormat: textFormat,
+	Func: func(in any) (any, error) {
+		return []byte(in.(time.Time).Format(time.RFC3339)), nil
 	},
 }

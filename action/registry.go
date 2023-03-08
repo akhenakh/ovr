@@ -10,10 +10,11 @@ type ActionRegistry struct {
 }
 
 var all = []Action{
-	upperAction, lowerAction, titleAction, quoteAction, unquoteAction,
+	upperAction, lowerAction, titleAction, trimSpaceAction, quoteAction, unquoteAction,
 	md5HashAction, sha1HashAction, sha256HashAction, sha512HashAction,
 	toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
 	parseJSONDateStringAction,
+	estTimeAction, utcTimeAction, isoTimeAction,
 }
 
 func NewRegistry() *ActionRegistry {
@@ -65,5 +66,17 @@ func (r *ActionRegistry) ActionsForTime(search string) (actions []*Action) {
 
 		sort.Slice(actions, func(i, j int) bool { return actions[i].Names[0] < actions[j].Names[0] })
 	}
+	return
+}
+
+func (r *ActionRegistry) ActionsForData(data *Data) (actions []*Action) {
+	for k, a := range r.m {
+		if strings.HasPrefix(k, data.Format.Prefix+",") {
+			actions = append(actions, a)
+		}
+
+		sort.Slice(actions, func(i, j int) bool { return actions[i].Names[0] < actions[j].Names[0] })
+	}
+
 	return
 }
