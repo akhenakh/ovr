@@ -76,7 +76,7 @@ type model struct {
 
 func newModel(in []byte) model {
 	var (
-		r            = action.NewRegistry()
+		r            = action.DefaultRegistry()
 		delegateKeys = newDelegateKeyMap()
 		listKeys     = newListKeyMap()
 	)
@@ -212,8 +212,18 @@ func (m model) View() string {
 
 func main() {
 	readStdin := flag.Bool("s", false, "Use Stdin as input, default to clipboard")
+	debug := flag.Bool("debug", false, "Debug in debug.log file")
 
 	flag.Parse()
+
+	if *debug {
+		f, err := tea.LogToFile("debug.log", "debug")
+		if err != nil {
+			fmt.Println("fatal:", err)
+			os.Exit(1)
+		}
+		defer f.Close()
+	}
 
 	err := clipboard.Init()
 	if err != nil {

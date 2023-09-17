@@ -3,11 +3,17 @@ package action
 import (
 	"sort"
 	"strings"
+	"sync"
 )
 
 type ActionRegistry struct {
 	m map[string]*Action
 }
+
+var (
+	defaultRegistry *ActionRegistry
+	registryOnce    sync.Once
+)
 
 var all = []Action{
 	upperAction, lowerAction, titleAction, trimSpaceAction, quoteAction, unquoteAction,
@@ -15,6 +21,13 @@ var all = []Action{
 	toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
 	parseJSONDateStringAction,
 	estTimeAction, utcTimeAction, isoTimeAction,
+}
+
+func DefaultRegistry() *ActionRegistry {
+	registryOnce.Do(func() {
+		defaultRegistry = NewRegistry()
+	})
+	return defaultRegistry
 }
 
 func NewRegistry() *ActionRegistry {

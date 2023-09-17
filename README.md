@@ -49,7 +49,8 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 - [ ] duration add substract
 - [X] escape unescape
 - [ ] reformat input, prettifie
-- [ ] JWT decode, known payloads (GeoJSON, AWS...), logs severity, golang stack, java stack...
+- [ ] JWT decode
+- [ ] known payloads (AWS...), logs severity, golang stack, java stack...
 - [ ] Minify 
 - [ ] sort by a column/property
 - [ ] Add/Set value
@@ -59,7 +60,7 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 - [ ] output to a configurable filename, xxx-%Y%m%d.txt
 - [ ] execute a shell command
 - [ ] Colors, RGBtoHex, js names to colors
-- [ ] WKB/WKT/GeoJSON
+- [ ] WKB/WKT/GeoJSON (geometry)
 - [ ] Skip entries
 - [ ] Time timezone
 - [ ] to qrcode

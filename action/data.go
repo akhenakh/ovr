@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/peterstace/simplefeatures/geom"
 )
 
 // Data to hold the current state of the input and the stack of applied transformations
@@ -32,6 +34,10 @@ func (d *Data) StoreTextValue(v []byte, a *Action) *Data {
 
 func (d *Data) StoreTimeValue(t time.Time, a *Action) *Data {
 	return &Data{Value: t, Stack: append(d.Stack, a), Format: timeFormat}
+}
+
+func (d *Data) StoreGeomValue(g geom.Geometry, a *Action) *Data {
+	return &Data{Value: g, Stack: append(d.Stack, a), Format: geoFormat}
 }
 
 func (d *Data) StoreJSONValue(t time.Time, a *Action) *Data {

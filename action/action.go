@@ -3,6 +3,8 @@ package action
 import (
 	"fmt"
 	"time"
+
+	"github.com/peterstace/simplefeatures/geom"
 )
 
 const (
@@ -31,6 +33,7 @@ var (
 	binFormat  = Format{"bin", "b"}
 	timeFormat = Format{"time", "T"}
 	jsonFormat = Format{"json", "j"}
+	geoFormat  = Format{"geojson", "g"}
 )
 
 func (a *Action) Transform(in *Data) (*Data, error) {
@@ -44,6 +47,16 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 		}
 		data, err = a.Func(in.RawValue)
 		if err != nil {
+			return nil, err
+		}
+
+	case geoFormat:
+		_, ok := in.Value.(geom.Geometry)
+		if !ok {
+			return nil, fmt.Errorf("input not a geometry")
+		}
+		data, err = a.Func(in.Value)
+		if !ok {
 			return nil, err
 		}
 
@@ -73,6 +86,13 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 			return nil, fmt.Errorf("function does not return a time.Time")
 		}
 		return in.StoreTimeValue(b, a), err
+	case geoFormat:
+		g, ok := data.(geom.Geometry)
+		if !ok {
+			return nil, fmt.Errorf("function does not return a geom")
+		}
+		return in.StoreGeomValue(g, a), err
+
 	default:
 		return nil, fmt.Errorf("unknown output format")
 	}
