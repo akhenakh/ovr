@@ -19,8 +19,8 @@ var all = []Action{
 	upperAction, lowerAction, titleAction, trimSpaceAction, quoteAction, unquoteAction,
 	md5HashAction, sha1HashAction, sha256HashAction, sha512HashAction,
 	toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
-	parseJSONDateStringAction,
-	estTimeAction, utcTimeAction, isoTimeAction,
+	parseJSONDateStringAction, epochTimeAction,
+	estTimeAction, utcTimeAction, isoTimeAction, timeEpochAction,
 }
 
 func DefaultRegistry() *ActionRegistry {

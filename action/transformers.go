@@ -7,6 +7,7 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -228,5 +229,32 @@ var isoTimeAction = Action{
 	OutputFormat: textFormat,
 	Func: func(in any) (any, error) {
 		return []byte(in.(time.Time).Format(time.RFC3339)), nil
+	},
+}
+
+var timeEpochAction = Action{
+	Doc:          "time to Epoch",
+	Names:        []string{"epoch"},
+	Type:         TransformAction,
+	InputFormat:  timeFormat,
+	OutputFormat: textFormat,
+	Func: func(in any) (any, error) {
+		return []byte(fmt.Sprintf("%d", in.(time.Time).Unix())), nil
+	},
+}
+
+var epochTimeAction = Action{
+	Doc:          "Parse Epoch time from input",
+	Names:        []string{"epoch"},
+	Type:         TransformAction,
+	InputFormat:  textFormat,
+	OutputFormat: timeFormat,
+	Func: func(in any) (any, error) {
+		ts, err := strconv.Atoi(string(in.([]byte)))
+		if err != nil {
+			return nil, err
+		}
+
+		return time.Unix(int64(ts), 0), nil
 	},
 }

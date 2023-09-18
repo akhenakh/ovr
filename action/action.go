@@ -33,7 +33,7 @@ var (
 	binFormat  = Format{"bin", "b"}
 	timeFormat = Format{"time", "T"}
 	jsonFormat = Format{"json", "j"}
-	geoFormat  = Format{"geojson", "g"}
+	geoFormat  = Format{"geometry", "g"}
 )
 
 func (a *Action) Transform(in *Data) (*Data, error) {

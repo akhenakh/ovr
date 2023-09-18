@@ -102,6 +102,7 @@ func TestAction_TextTimeTransform(t *testing.T) {
 		wantErr bool
 	}{
 		{"jsondate", "2012-04-23T18:25:43Z", "2012-04-23 18:25:43 +0000 UTC", false},
+		{"epoch", "1257894000", "2012-04-23 18:25:43 +0000 UTC", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.action, func(t *testing.T) {
@@ -164,6 +165,12 @@ func TestAction_TimeTextTransform(t *testing.T) {
 			"iso",
 			time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
 			"2009-11-10T23:00:00Z",
+			false,
+		},
+		{
+			"epoch",
+			time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
+			"1257894000",
 			false,
 		},
 	}

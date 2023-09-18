@@ -61,6 +61,7 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 - [ ] execute a shell command
 - [ ] Colors, RGBtoHex, js names to colors
 - [ ] WKB/WKT/GeoJSON (geometry)
+- [ ] Geometry: area, centroid, timezone, 
 - [ ] Skip entries
 - [ ] Time timezone
 - [ ] to qrcode
