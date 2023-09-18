@@ -27,6 +27,7 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 - YAML
 - TOML
 - Images
+- Geometry
 
 ## Values Types
 
@@ -141,6 +142,9 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 
 - code to unicode
 - name to unicode
+## Name
+
+The name over is based on [Over and Over from Hot Chip](https://www.youtube.com/watch?v=pDJKgi2e-Aw)
 
 ## TODO
 
