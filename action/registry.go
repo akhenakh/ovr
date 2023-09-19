@@ -20,7 +20,7 @@ var all = []Action{
 	md5HashAction, sha1HashAction, sha256HashAction, sha512HashAction,
 	toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
 	parseJSONDateStringAction, epochTimeAction,
-	estTimeAction, utcTimeAction, isoTimeAction, timeEpochAction,
+	estTimeAction, etTimeAction, utcTimeAction, isoTimeAction, timeEpochAction,
 }
 
 func DefaultRegistry() *ActionRegistry {

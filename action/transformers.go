@@ -182,7 +182,7 @@ var fromHexStringAction = Action{
 	InputFormat:  textFormat,
 	OutputFormat: textFormat,
 	Func: func(in any) (any, error) {
-		return hex.DecodeString(string(in.([]byte)))
+		return hex.DecodeString(strings.ReplaceAll(string(in.([]byte)), " ", ""))
 	},
 }
 
@@ -205,6 +205,18 @@ var estTimeAction = Action{
 	OutputFormat: timeFormat,
 	Func: func(in any) (any, error) {
 		est, _ := time.LoadLocation("EST")
+		return in.(time.Time).In(est), nil
+	},
+}
+
+var etTimeAction = Action{
+	Doc:          "Change time to ET timezone",
+	Names:        []string{"et"},
+	Type:         TransformAction,
+	InputFormat:  timeFormat,
+	OutputFormat: timeFormat,
+	Func: func(in any) (any, error) {
+		est, _ := time.LoadLocation("ET")
 		return in.(time.Time).In(est), nil
 	},
 }

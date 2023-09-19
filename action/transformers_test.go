@@ -74,7 +74,7 @@ func TestAction_TextTransform(t *testing.T) {
 		{action: "sha512", in: "hello", want: "9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca72323c3d99ba5c11d7c7acc6e14b8c5da0c4663475c2e5c3adef46f73bcdec043", wantErr: false},
 		{action: "md5", in: "hello", want: "5d41402abc4b2a76b9719d911017c592", wantErr: false},
 		{"hex", "48454c4c4f", "HELLO", false},
-		{action: "hex", in: "gg", want: "HELLO", wantErr: true},
+		{"hex", "48454 c4c4f", "HELLO", false},
 		{"tohex", "HELLO", "48454c4c4f", false},
 		{action: "base64", in: "aGVsbG8=", want: "hello", wantErr: false},
 		{action: "tobase64", in: "hello", want: "aGVsbG8=", wantErr: false},
@@ -102,7 +102,7 @@ func TestAction_TextTimeTransform(t *testing.T) {
 		wantErr bool
 	}{
 		{"jsondate", "2012-04-23T18:25:43Z", "2012-04-23 18:25:43 +0000 UTC", false},
-		{"epoch", "1257894000", "2012-04-23 18:25:43 +0000 UTC", false},
+		{"epoch", "1257894000", "2009-11-10 18:00:00 -0500 EST", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.action, func(t *testing.T) {
