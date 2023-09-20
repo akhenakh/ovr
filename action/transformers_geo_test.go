@@ -64,6 +64,19 @@ func TestAction_GeoTextTransform(t *testing.T) {
 			`POINT(-74 40.7)`,
 			false,
 		},
+		{
+			"centroid",
+			`{"type":"Point","coordinates":[-74,40.7]}`,
+			"POINT(-74 40.7)",
+			false,
+		},
+
+		{
+			"country",
+			`{"type":"Point","coordinates":[2.2,48.8]}`,
+			"France",
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.action, func(t *testing.T) {

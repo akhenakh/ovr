@@ -2,6 +2,15 @@
 
 A CLI tool to pipe anything into and apply transformations with an advanced UI.
 
+## Build
+```sh
+go build -o ovr ./cmd/ovr
+```
+
+Enable geo features.
+```sh
+go build -tags geo -o ovr ./cmd/ovr
+```
 ## Features
 - Fuzzy search for block names
 - Apply actions, cancel actions using backspace
@@ -66,6 +75,7 @@ A CLI tool to pipe anything into and apply transformations with an advanced UI.
 - [ ] Skip entries
 - [ ] Time timezone
 - [ ] to qrcode
+- [ ] ip address
 
 ## Real workflows
 
