@@ -7,6 +7,7 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -268,5 +269,33 @@ var epochTimeAction = Action{
 		}
 
 		return time.Unix(int64(ts), 0), nil
+	},
+}
+
+var commaTextListAction = Action{
+	Doc:          "Parse a text input as a list separated by ,",
+	Names:        []string{"comma"},
+	Type:         TransformAction,
+	InputFormat:  textFormat,
+	OutputFormat: textListFormat,
+	Func: func(in any) (any, error) {
+		l := strings.Split(string(in.([]byte)), ",")
+		if len(l) <= 1 {
+			return []string{}, errors.New("can't split using ,")
+		}
+
+		return l, nil
+	},
+}
+
+var textListJoinCommaAction = Action{
+	Doc:          "Join a list separated by ,",
+	Names:        []string{"comma"},
+	Type:         TransformAction,
+	InputFormat:  textListFormat,
+	OutputFormat: textFormat,
+	Func: func(in any) (any, error) {
+		l := in.([]string)
+		return []byte(strings.Join(l, ",")), nil
 	},
 }

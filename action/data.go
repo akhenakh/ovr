@@ -25,11 +25,11 @@ func NewDataText(v []byte) *Data {
 }
 
 func (d *Data) StoreTextValue(v []byte, a *Action) *Data {
-	return &Data{
-		RawValue: v,
-		Format:   textFormat,
-		Stack:    append(d.Stack, a),
-	}
+	return &Data{RawValue: v, Format: textFormat, Stack: append(d.Stack, a)}
+}
+
+func (d *Data) StoreTextListValue(l []string, a *Action) *Data {
+	return &Data{Value: l, Format: textListFormat, Stack: append(d.Stack, a)}
 }
 
 func (d *Data) StoreTimeValue(t time.Time, a *Action) *Data {

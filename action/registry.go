@@ -21,6 +21,7 @@ var all = []Action{
 	toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
 	parseJSONDateStringAction, epochTimeAction,
 	estTimeAction, etTimeAction, utcTimeAction, isoTimeAction, timeEpochAction,
+	commaTextListAction, textListJoinCommaAction,
 }
 
 func DefaultRegistry() *ActionRegistry {
@@ -69,22 +70,14 @@ func (r *ActionRegistry) ActionsForText(search string) (actions []*Action) {
 	return
 }
 
-// ActionsForTime returns a list of actions, prefix by search, all if search is empty
-// ordered alphabetically
-func (r *ActionRegistry) ActionsForTime(search string) (actions []*Action) {
-	for k, a := range r.m {
-		if strings.HasPrefix(k, timeFormat.Prefix+",") {
-			actions = append(actions, a)
-		}
-
-		sort.Slice(actions, func(i, j int) bool { return actions[i].Names[0] < actions[j].Names[0] })
-	}
-	return
-}
-
 func (r *ActionRegistry) ActionsForData(data *Data) (actions []*Action) {
 	for k, a := range r.m {
 		if strings.HasPrefix(k, data.Format.Prefix+",") {
+			actions = append(actions, a)
+		}
+
+		// in case we have a textList we also want to apply text filter, that can output text
+		if data.Format == textListFormat && a.InputFormat == textFormat && a.OutputFormat == textFormat {
 			actions = append(actions, a)
 		}
 

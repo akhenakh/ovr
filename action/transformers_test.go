@@ -54,6 +54,124 @@ func (r *ActionRegistry) TimeAction(action string, in time.Time) (time.Time, err
 	return ab.(time.Time), err
 }
 
+func (r *ActionRegistry) TextTextListAction(action string, in []byte) ([]string, error) {
+	a, ok := r.m[textFormat.Prefix+","+action]
+	if !ok {
+		return nil, fmt.Errorf("action %s does not exist for list of string input", action)
+	}
+	ab, err := a.Func(in)
+	return ab.([]string), err
+}
+
+func (r *ActionRegistry) TextListTextListAction(action string, in []string) ([]string, error) {
+	a, ok := r.m[textListFormat.Prefix+","+action]
+	if !ok {
+		// special case to apply text to list of text
+		a, ok = r.m[textFormat.Prefix+","+action]
+		if !ok {
+			return nil, fmt.Errorf("action %s does not exist for list of string input", action)
+		}
+
+		resp := make([]string, len(in))
+		for i, s := range in {
+			v, err := a.Func([]byte(s))
+			if err != nil {
+				return nil, err
+			}
+			resp[i] = string(v.([]byte))
+		}
+		return resp, nil
+	}
+	ab, err := a.Func(in)
+	return ab.([]string), err
+}
+
+func (r *ActionRegistry) TextListTextAction(action string, in []string) ([]byte, error) {
+	a, ok := r.m[textListFormat.Prefix+","+action]
+	if !ok {
+		return nil, fmt.Errorf("action %s does not exist for list of string input", action)
+	}
+	ab, err := a.Func(in)
+	return ab.([]byte), err
+}
+
+func TestAction_TextTextListTransform(t *testing.T) {
+	r := NewRegistry()
+
+	tests := []struct {
+		action  string
+		in      string
+		want    []string
+		wantErr bool
+	}{
+		{action: "comma", in: "hello", want: nil, wantErr: true},
+		{"comma", "a,b", []string{"a", "b"}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.action, func(t *testing.T) {
+			got, err := r.TextTextListAction(tt.action, []byte(tt.in))
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
+
+func TestAction_TextListTextListTransform(t *testing.T) {
+	r := NewRegistry()
+
+	tests := []struct {
+		action  string
+		in      []string
+		want    []string
+		wantErr bool
+	}{
+		{"upper", []string{"a", "b"}, []string{"A", "B"}, false},
+		{"lower", []string{"A", "B"}, []string{"a", "b"}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.action, func(t *testing.T) {
+			got, err := r.TextListTextListAction(tt.action, tt.in)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.want, got)
+			}
+		})
+	}
+}
+
+func TestAction_TextListTextTransform(t *testing.T) {
+	r := NewRegistry()
+
+	tests := []struct {
+		action  string
+		in      []string
+		want    string
+		wantErr bool
+	}{
+		{action: "comma", in: []string{"a", "b"}, want: "a,b", wantErr: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.action, func(t *testing.T) {
+			got, err := r.TextListTextAction(tt.action, tt.in)
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.want, string(got))
+			}
+		})
+	}
+}
+
 func TestAction_TextTransform(t *testing.T) {
 	r := NewRegistry()
 
