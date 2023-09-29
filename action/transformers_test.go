@@ -2,6 +2,7 @@ package action
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -218,6 +219,8 @@ func TestAction_TextTransform(t *testing.T) {
 
 func TestAction_TextTimeTransform(t *testing.T) {
 	r := NewRegistry()
+
+	os.Setenv("TZ", "Canada/Eastern")
 
 	tests := []struct {
 		action  string
