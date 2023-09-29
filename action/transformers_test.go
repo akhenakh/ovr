@@ -196,6 +196,12 @@ func TestAction_TextTransform(t *testing.T) {
 		{"tohex", "HELLO", "48454c4c4f", false},
 		{action: "base64", in: "aGVsbG8=", want: "hello", wantErr: false},
 		{action: "tobase64", in: "hello", want: "aGVsbG8=", wantErr: false},
+		{action: "minify", in: `{
+			"engine_version":   "1.7"
+		  }`, want: `{"engine_version":"1.7"}`, wantErr: false},
+		{action: "jsoncompact", in: `{
+			"engine_version":   "1.7"
+		  }`, want: `{"engine_version":"1.7"}`, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.action, func(t *testing.T) {

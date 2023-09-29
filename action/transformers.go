@@ -1,12 +1,14 @@
 package action
 
 import (
+	"bytes"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -162,6 +164,21 @@ var parseJSONDateStringAction = Action{
 	OutputFormat: timeFormat,
 	Func: func(in any) (any, error) {
 		return time.Parse("2006-01-02T15:04:05Z0700", string(in.([]byte)))
+	},
+}
+
+var jsonCompactAction = Action{
+	Doc:          "Minify/compact JSON from input",
+	Names:        []string{"jsoncompact", "minify"},
+	Type:         TransformAction,
+	InputFormat:  textFormat,
+	OutputFormat: textFormat,
+	Func: func(in any) (any, error) {
+		dst := &bytes.Buffer{}
+		if err := json.Compact(dst, in.([]byte)); err != nil {
+			return nil, err
+		}
+		return dst.Bytes(), nil
 	},
 }
 

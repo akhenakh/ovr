@@ -21,7 +21,7 @@ var all = []Action{
 	toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
 	parseJSONDateStringAction, epochTimeAction,
 	estTimeAction, etTimeAction, utcTimeAction, isoTimeAction, timeEpochAction,
-	commaTextListAction, textListJoinCommaAction,
+	commaTextListAction, textListJoinCommaAction, jsonCompactAction,
 }
 
 func DefaultRegistry() *ActionRegistry {
