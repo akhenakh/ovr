@@ -1,4 +1,8 @@
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
+github.com/akhenakh/clipboard v0.0.0-20240106171927-a6f0ef05dc13 h1:jggs32V0F09409twWtx+jKnMSXHNkcZZaXVYYLck4cM=
+github.com/akhenakh/clipboard v0.0.0-20240106171927-a6f0ef05dc13/go.mod h1:PQIvqYO9GP29yINEfsEn5zSQKAz3UgXmZKzDA6dnq2E=
+github.com/akhenakh/clipboard v0.0.0-20240107160805-bc9b71402ddf h1:MnQeUyp47OEg1h8+/SV6og6ClnrPIVQivc6h06OuTwk=
+github.com/akhenakh/clipboard v0.0.0-20240107160805-bc9b71402ddf/go.mod h1:PQIvqYO9GP29yINEfsEn5zSQKAz3UgXmZKzDA6dnq2E=
 github.com/akhenakh/coord2country v0.0.0-20230920221032-902169a654ca h1:n4nPJPGVXc1fiashw5rNg5FzGrNVQnUD91izrMb5UyA=
 github.com/akhenakh/coord2country v0.0.0-20230920221032-902169a654ca/go.mod h1:Vi+I3NTc/DLNk7iBrRmoSzFT5LA31RCX4rQ4N2qAyFY=
 github.com/atotto/clipboard v0.1.4 h1:EH0zSVneZPSuFR11BlR9YppQTVDbh5+16AmcJi4g1z4=

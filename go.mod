@@ -9,7 +9,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/peterstace/simplefeatures v0.46.0
 	github.com/stretchr/testify v1.8.4
-	golang.design/x/clipboard v0.7.0
+	golang.design/x/clipboard v0.7.1-0.20230416133002-b50badc062a5
 	golang.org/x/text v0.14.0
 )
 
@@ -40,4 +40,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/golang-design/clipboard => github.com/akhenakh/clipboard v0.0.0-20240106171927-a6f0ef05dc13
+replace golang.design/x/clipboard => github.com/akhenakh/clipboard v0.0.0-20240107160805-bc9b71402ddf
