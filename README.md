@@ -59,18 +59,18 @@ go build -tags geo -o ovr ./cmd/ovr
 - [ ] duration add substract
 - [X] escape unescape
 - [ ] reformat input, prettifie
-- [ ] JWT decode
+- [X] JWT decode
 - [ ] known payloads (AWS...), logs severity, golang stack, java stack...
 - [ ] Minify 
 - [ ] sort by a column/property
 - [ ] Add/Set value
 - [ ] dedup
-- [ ] conversion (json, csv, yaml)
+- [ ] conversion (json, csv, yaml, toml)
 - [ ] Filter fields, select values
 - [ ] output to a configurable filename, xxx-%Y%m%d.txt
 - [ ] execute a shell command
 - [ ] Colors, RGBtoHex, js names to colors
-- [ ] WKB/WKT/GeoJSON (geometry)
+- [X] WKB/WKT/GeoJSON (geometry)
 - [ ] Geometry: area, centroid, timezone, 
 - [ ] Skip entries
 - [ ] Time timezone

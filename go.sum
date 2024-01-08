@@ -5,6 +5,8 @@ github.com/akhenakh/clipboard v0.0.0-20240107160805-bc9b71402ddf h1:MnQeUyp47OEg
 github.com/akhenakh/clipboard v0.0.0-20240107160805-bc9b71402ddf/go.mod h1:PQIvqYO9GP29yINEfsEn5zSQKAz3UgXmZKzDA6dnq2E=
 github.com/akhenakh/coord2country v0.0.0-20230920221032-902169a654ca h1:n4nPJPGVXc1fiashw5rNg5FzGrNVQnUD91izrMb5UyA=
 github.com/akhenakh/coord2country v0.0.0-20230920221032-902169a654ca/go.mod h1:Vi+I3NTc/DLNk7iBrRmoSzFT5LA31RCX4rQ4N2qAyFY=
+github.com/akhenakh/coord2country v0.0.0-20240107175106-ab2a99ed2226 h1:AZFiejzyckgUdjDVJWgbqtajZVDiqyq6qlcYPkNrMBM=
+github.com/akhenakh/coord2country v0.0.0-20240107175106-ab2a99ed2226/go.mod h1:biad8ZK6GwEazE4EGxwzD+tbsTK9FK+4XgDkL36IAHc=
 github.com/atotto/clipboard v0.1.4 h1:EH0zSVneZPSuFR11BlR9YppQTVDbh5+16AmcJi4g1z4=
 github.com/atotto/clipboard v0.1.4/go.mod h1:ZY9tmq7sm5xIbd9bOK4onWV4S6X0u6GY7Vn0Yu86PYI=
 github.com/aymanbagabas/go-osc52/v2 v2.0.1 h1:HwpRHbFMcZLEVr42D4p7XBqjyuxQH5SMiErDT4WkJ2k=

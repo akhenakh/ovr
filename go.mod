@@ -3,7 +3,7 @@ module github.com/akhenakh/ovr
 go 1.21.5
 
 require (
-	github.com/akhenakh/coord2country v0.0.0-20230920221032-902169a654ca
+	github.com/akhenakh/coord2country v0.0.0-20240107175106-ab2a99ed2226
 	github.com/charmbracelet/bubbles v0.17.1
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1

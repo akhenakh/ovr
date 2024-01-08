@@ -107,6 +107,12 @@ func TestAction_TextTextListTransform(t *testing.T) {
 	}{
 		{action: "comma", in: "hello", want: nil, wantErr: true},
 		{"comma", "a,b", []string{"a", "b"}, false},
+		{
+			"jwt",
+			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlJvYmVydCIsImlhdCI6MTUxNjIzOTAyMn0.fiHN5qbwhxBjwxLKSXfDV4wkVeuNeV8URADmuiYYYQo",
+			[]string{`{"alg":"HS256","typ":"JWT"}`, `{"sub":"1234567890","name":"Robert","iat":1516239022}`},
+			false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -158,6 +164,8 @@ func TestAction_TextListTextTransform(t *testing.T) {
 		wantErr bool
 	}{
 		{action: "comma", in: []string{"a", "b"}, want: "a,b", wantErr: false},
+		{"first", []string{"A", "B", "C"}, "A", false},
+		{"last", []string{"A", "B", "C"}, "C", false},
 	}
 
 	for _, tt := range tests {

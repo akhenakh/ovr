@@ -305,6 +305,34 @@ var commaTextListAction = Action{
 	},
 }
 
+var jwtTextListAction = Action{
+	Doc:          "Parse a JWT and show the 3 JSON parts,",
+	Names:        []string{"jwt"},
+	Type:         TransformAction,
+	InputFormat:  textFormat,
+	OutputFormat: textListFormat,
+	Func: func(in any) (any, error) {
+		l := strings.Split(string(in.([]byte)), ".")
+		if len(l) != 3 {
+			return []string{}, errors.New("not a valid JWT")
+		}
+
+		out := make([]string, 2)
+		for i, t := range l[0:2] {
+			j, err := base64.StdEncoding.DecodeString(t)
+			if err != nil {
+				// The shorter version (67 characters) is probably just missing a padding character (=) to be correct Base64.
+				j, err = base64.RawStdEncoding.DecodeString(t)
+				if err != nil {
+					return nil, fmt.Errorf("can't decode base64 part of the JWT: %w", err)
+				}
+			}
+			out[i] = string(j)
+		}
+		return out, nil
+	},
+}
+
 var textListJoinCommaAction = Action{
 	Doc:          "Join a list separated by ,",
 	Names:        []string{"comma"},
@@ -314,5 +342,29 @@ var textListJoinCommaAction = Action{
 	Func: func(in any) (any, error) {
 		l := in.([]string)
 		return []byte(strings.Join(l, ",")), nil
+	},
+}
+
+var textListFirstAction = Action{
+	Doc:          "Select the first element of a list",
+	Names:        []string{"first"},
+	Type:         TransformAction,
+	InputFormat:  textListFormat,
+	OutputFormat: textFormat,
+	Func: func(in any) (any, error) {
+		l := in.([]string)
+		return []byte(l[0]), nil
+	},
+}
+
+var textListLastAction = Action{
+	Doc:          "Select the last element of a list",
+	Names:        []string{"last"},
+	Type:         TransformAction,
+	InputFormat:  textListFormat,
+	OutputFormat: textFormat,
+	Func: func(in any) (any, error) {
+		l := in.([]string)
+		return []byte(l[len(l)-1]), nil
 	},
 }
