@@ -57,7 +57,7 @@ func newApp(in []byte) *App {
 			To(
 				g.Label("TEXT"),
 			),
-			g.Label(string(in)).Font(smallFont)),
+			g.Label(string(in)).Font(smallFont).Wrapped(true)),
 		listBox,
 		g.Label(statusMsg).Font(smallFont),
 		// g.Column(
@@ -104,7 +104,7 @@ func newApp(in []byte) *App {
 					To(
 						g.Label(strings.ToUpper(a.out.Format.Name)),
 					),
-					g.Label(string(a.out.String())).Font(smallFont)),
+					g.Label(string(a.out.String())).Font(smallFont).Wrapped(true)),
 				listBox,
 				g.Label(statusMsg).Font(smallFont),
 			}
@@ -128,7 +128,7 @@ func newApp(in []byte) *App {
 				To(
 					g.Label(strings.ToUpper(a.out.Format.Name)),
 				),
-				g.Label(string(a.out.String())).Font(smallFont)),
+				g.Label(string(a.out.String())).Font(smallFont).Wrapped(true)),
 			listBox,
 			g.Label(statusMsg).Font(smallFont),
 		}
