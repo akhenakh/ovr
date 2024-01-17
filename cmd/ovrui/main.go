@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/AllenDang/giu"
 	g "github.com/AllenDang/giu"
@@ -73,21 +74,25 @@ func (a *App) defaultView(statusMsg string) {
 		txtDisplay = strings.Join(lines[0:4], "\n")
 	}
 
-	var counter int
+	var info string
 
 	switch a.out.Format.Name {
 	case action.TextFormat.Name:
-		counter = len(a.out.String())
+		info = fmt.Sprintf("%d", len(a.out.String()))
 	case action.TextListFormat.Name:
 		l := a.out.Value.([]string)
-		counter = len(l)
+		info = fmt.Sprintf("%d", len(l))
+	case action.TimeFormat.Name:
+		l := a.out.Value.(time.Time)
+		_, offset := l.Zone()
+		info = fmt.Sprintf("%+d", offset/60/60)
 	}
 
 	a.visibleWidgets = []g.Widget{
 		g.Row(g.Style().
 			SetColor(g.StyleColorText, color.RGBA{0x22, 0xDD, 0x22, 255}).
 			To(
-				g.Label(strings.ToUpper(fmt.Sprintf("%s\n%d", a.out.Format.Name, counter))), // TODO: number of elements or lines ...
+				g.Label(strings.ToUpper(fmt.Sprintf("%s\n%s", a.out.Format.Name, info))), // TODO: number of elements or lines ...
 			),
 			g.Label(string(txtDisplay)).Wrapped(true)),
 
