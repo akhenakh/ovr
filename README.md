@@ -55,31 +55,47 @@ go build -tags geo -o ovr ./cmd/ovr
 - [X] encoding from/to (b64, hex ...)
 - [X] hashes
 - [ ] count inputs
-- [ ] time parse transform, epoch 
+- [X] time parse transform, epoch 
+- [ ] Time timezone, not completed
 - [ ] duration add substract
 - [X] escape unescape
 - [ ] reformat input, prettifie
 - [X] JWT decode
+- [ ] JWT Validate
 - [ ] known payloads (AWS...), logs severity, golang stack, java stack...
 - [X] Minify 
 - [ ] sort by a column/property
 - [ ] Add/Set value
-- [ ] dedup
 - [ ] conversion (json, csv, yaml, toml)
-- [ ] Filter fields, select values
 - [ ] output to a configurable filename, xxx-%Y%m%d.txt
 - [ ] execute a shell command
 - [ ] Colors, RGBtoHex, js names to colors
 - [X] WKB/WKT/GeoJSON (geometry)
-- [ ] Geometry: area, centroid, timezone, 
+- [X] Geometry: area, centroid, timezone, 
 - [ ] Skip entries
-- [ ] Time timezone
 - [ ] to qrcode
 - [ ] ip address
+- [ ] URL
+- [ ] Source Code, format, colorize
+- [ ] Save to file
+
+## Filter 
+- [ ] dedup from a list
+- [ ] Filter fields, select values
+- [ ] JMESPath
+- [ ] Regexp
+- [ ] https://github.com/tidwall/gjson
+
+## Create Data (not from stdin or pasteboard)
+- [ ] Time Now
+- [ ] UUID
+- [ ] From an HTTP Request
+- [ ] Multiple Create (will create as many above)
+- [ ] From Editor
 
 ## Real workflows
 
-- from clipboard, unescape json, parse json, prettryfier, colorize
+- from clipboard, unescape json, parse json, prettyfier, colorize
 - from pipe, recognize CSV, apply sort by 3rd column, display output
 
 ## Libraries to consider
