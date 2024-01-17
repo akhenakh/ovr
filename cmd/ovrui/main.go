@@ -15,15 +15,25 @@ import (
 var bigFont *g.FontInfo
 
 type App struct {
-	in                    []byte
-	out                   *action.Data
-	r                     *action.ActionRegistry
-	statusMsg             string
-	dataMsg               string
-	disableGlobalShortcut bool // disable global shortcut while using editor or /
-	visibleWidgets        []g.Widget
-	searchInput           string
+	in             []byte
+	out            *action.Data
+	r              *action.ActionRegistry
+	statusMsg      string
+	dataMsg        string
+	visibleWidgets []g.Widget
+	searchInput    string
+	state          UIState
 }
+
+type UIState uint8
+
+const (
+	HomeState UIState = iota
+	SearchState
+	ViewState
+)
+
+const defaultStatusMsg = "q quit, v view, / search"
 
 func newApp(in []byte) *App {
 	out := action.NewDataText(in)
@@ -32,7 +42,7 @@ func newApp(in []byte) *App {
 
 	g.Context.FontAtlas.SetDefaultFont("iosevskanerdfont.ttf", 15)
 
-	statusMsg := "q quit, v view, / search"
+	statusMsg := defaultStatusMsg
 
 	r := action.DefaultRegistry()
 
@@ -50,9 +60,10 @@ func newApp(in []byte) *App {
 
 // defaultView display the "home" with the list of actions
 func (a *App) defaultView(statusMsg string) {
+	a.state = HomeState
 	a.visibleWidgets = []g.Widget{
 		g.Row(g.Style().
-			SetColor(g.StyleColorText, color.RGBA{0x11, 0xDD, 0x11, 255}).
+			SetColor(g.StyleColorText, color.RGBA{0x22, 0xDD, 0x22, 255}).
 			To(
 				g.Label(strings.ToUpper(a.out.Format.Name)),
 			),
@@ -65,6 +76,8 @@ func (a *App) defaultView(statusMsg string) {
 
 // searchView display the filtered list of actions
 func (a *App) searchView(search string) {
+	a.state = SearchState
+
 	a.statusMsg = "Search: Type to find an action, enter or double click to execute, ESC to close"
 	a.visibleWidgets = []g.Widget{
 		g.InputText(&a.searchInput).Hint("Type to search for an action, ESC to quit"),
@@ -75,6 +88,8 @@ func (a *App) searchView(search string) {
 
 // editorView displays the full window editor
 func (a *App) editorView(statusMsg string) {
+	a.state = ViewState
+
 	editor := g.CodeEditor().
 		ShowWhitespaces(false).
 		Text("").
@@ -98,7 +113,6 @@ func (a *App) listBox() g.Widget {
 
 	// when an action is selected in the list
 	listBox.OnDClick(func(idx int) {
-		// defer giu.Update()
 		act := actions[idx]
 
 		out, err := act.Transform(a.out)
@@ -120,7 +134,11 @@ func (a *App) loop() {
 	g.SingleWindow().RegisterKeyboardShortcuts(
 		// quit command
 		giu.WindowShortcut{Key: giu.KeyQ, Callback: func() {
-			if !a.disableGlobalShortcut {
+			if a.state == HomeState {
+				fmt.Printf("%s\n---\n%s\n", a.out.StackString(), a.out.String())
+
+				clipboard.Write(clipboard.FmtText, []byte(a.out.String()))
+
 				os.Exit(0)
 			}
 		}},
@@ -128,7 +146,7 @@ func (a *App) loop() {
 		// search command
 		giu.WindowShortcut{Key: giu.KeySlash, Callback: func() {
 			fmt.Println("Slash")
-			if !a.disableGlobalShortcut {
+			if a.state == HomeState {
 				a.statusMsg = "Search: Type to find an action, enter or double click to execute, ESC to close"
 				a.searchView("")
 			}
@@ -136,7 +154,7 @@ func (a *App) loop() {
 
 		// view command
 		giu.WindowShortcut{Key: giu.KeyV, Callback: func() {
-			if !a.disableGlobalShortcut {
+			if a.state == HomeState {
 				a.editorView("ESC to quit the editor")
 			}
 		}},
@@ -145,7 +163,7 @@ func (a *App) loop() {
 		giu.WindowShortcut{Key: giu.KeyBackspace, Callback: func() {
 			fmt.Println("action remove requested")
 
-			if !a.disableGlobalShortcut {
+			if a.state == HomeState {
 				d, oa, err := a.out.Undo(a.in)
 				if err != nil { // we should not have errors in the stack
 					a.statusMsg = "Error " + err.Error()
@@ -159,8 +177,8 @@ func (a *App) loop() {
 
 		// close editor
 		giu.WindowShortcut{Key: giu.KeyEscape, Callback: func() {
-			if !a.disableGlobalShortcut {
-				os.Exit(0)
+			if a.state == ViewState || a.state == SearchState {
+				a.defaultView(defaultStatusMsg)
 			}
 		}},
 	).Layout(a.visibleWidgets...)

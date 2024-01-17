@@ -61,7 +61,7 @@ go build -tags geo -o ovr ./cmd/ovr
 - [ ] reformat input, prettifie
 - [X] JWT decode
 - [ ] known payloads (AWS...), logs severity, golang stack, java stack...
-- [ ] Minify 
+- [X] Minify 
 - [ ] sort by a column/property
 - [ ] Add/Set value
 - [ ] dedup
