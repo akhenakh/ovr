@@ -10,7 +10,7 @@ import (
 )
 
 func (r *ActionRegistry) TextAction(action string, in []byte) ([]byte, error) {
-	a, ok := r.m[textFormat.Prefix+","+action]
+	a, ok := r.m[TextFormat.Prefix+","+action]
 	if !ok {
 		return nil, fmt.Errorf("action %s does not exist for text input", action)
 	}
@@ -20,7 +20,7 @@ func (r *ActionRegistry) TextAction(action string, in []byte) ([]byte, error) {
 }
 
 func (r *ActionRegistry) BinAction(action string, in []byte) ([]byte, error) {
-	a, ok := r.m[binFormat.Prefix+","+action]
+	a, ok := r.m[BinFormat.Prefix+","+action]
 	if !ok {
 		return nil, fmt.Errorf("action %s does not exist for bin input", action)
 	}
@@ -29,7 +29,7 @@ func (r *ActionRegistry) BinAction(action string, in []byte) ([]byte, error) {
 }
 
 func (r *ActionRegistry) TextTimeAction(action string, in []byte) (time.Time, error) {
-	a, ok := r.m[textFormat.Prefix+","+action]
+	a, ok := r.m[TextFormat.Prefix+","+action]
 	if !ok {
 		return time.Time{}, fmt.Errorf("action %s does not exist for text input", action)
 	}
@@ -38,7 +38,7 @@ func (r *ActionRegistry) TextTimeAction(action string, in []byte) (time.Time, er
 }
 
 func (r *ActionRegistry) TimeTextAction(action string, in time.Time) ([]byte, error) {
-	a, ok := r.m[timeFormat.Prefix+","+action]
+	a, ok := r.m[TimeFormat.Prefix+","+action]
 	if !ok {
 		return nil, fmt.Errorf("action %s does not exist for time input", action)
 	}
@@ -47,7 +47,7 @@ func (r *ActionRegistry) TimeTextAction(action string, in time.Time) ([]byte, er
 }
 
 func (r *ActionRegistry) TimeAction(action string, in time.Time) (time.Time, error) {
-	a, ok := r.m[timeFormat.Prefix+","+action]
+	a, ok := r.m[TimeFormat.Prefix+","+action]
 	if !ok {
 		return time.Time{}, fmt.Errorf("action %s does not exist for time input", action)
 	}
@@ -56,7 +56,7 @@ func (r *ActionRegistry) TimeAction(action string, in time.Time) (time.Time, err
 }
 
 func (r *ActionRegistry) TextTextListAction(action string, in []byte) ([]string, error) {
-	a, ok := r.m[textFormat.Prefix+","+action]
+	a, ok := r.m[TextFormat.Prefix+","+action]
 	if !ok {
 		return nil, fmt.Errorf("action %s does not exist for list of string input", action)
 	}
@@ -65,10 +65,10 @@ func (r *ActionRegistry) TextTextListAction(action string, in []byte) ([]string,
 }
 
 func (r *ActionRegistry) TextListTextListAction(action string, in []string) ([]string, error) {
-	a, ok := r.m[textListFormat.Prefix+","+action]
+	a, ok := r.m[TextListFormat.Prefix+","+action]
 	if !ok {
 		// special case to apply text to list of text
-		a, ok = r.m[textFormat.Prefix+","+action]
+		a, ok = r.m[TextFormat.Prefix+","+action]
 		if !ok {
 			return nil, fmt.Errorf("action %s does not exist for list of string input", action)
 		}
@@ -88,7 +88,7 @@ func (r *ActionRegistry) TextListTextListAction(action string, in []string) ([]s
 }
 
 func (r *ActionRegistry) TextListTextAction(action string, in []string) ([]byte, error) {
-	a, ok := r.m[textListFormat.Prefix+","+action]
+	a, ok := r.m[TextListFormat.Prefix+","+action]
 	if !ok {
 		return nil, fmt.Errorf("action %s does not exist for list of string input", action)
 	}

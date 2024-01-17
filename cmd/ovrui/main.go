@@ -8,8 +8,10 @@ import (
 
 	"github.com/AllenDang/giu"
 	g "github.com/AllenDang/giu"
-	"github.com/akhenakh/ovr/action"
+	"github.com/sahilm/fuzzy"
 	"golang.design/x/clipboard"
+
+	"github.com/akhenakh/ovr/action"
 )
 
 var bigFont *g.FontInfo
@@ -61,15 +63,35 @@ func newApp(in []byte) *App {
 // defaultView display the "home" with the list of actions
 func (a *App) defaultView(statusMsg string) {
 	a.state = HomeState
+
+	txtDisplay := a.out.String()
+	if len(txtDisplay) > 400 {
+		txtDisplay = txtDisplay[0:400]
+	}
+	lines := strings.Split(txtDisplay, "\n")
+	if len(lines) > 4 {
+		txtDisplay = strings.Join(lines[0:4], "\n")
+	}
+
+	var counter int
+
+	switch a.out.Format.Name {
+	case action.TextFormat.Name:
+		counter = len(a.out.String())
+	case action.TextListFormat.Name:
+		l := a.out.Value.([]string)
+		counter = len(l)
+	}
+
 	a.visibleWidgets = []g.Widget{
 		g.Row(g.Style().
 			SetColor(g.StyleColorText, color.RGBA{0x22, 0xDD, 0x22, 255}).
 			To(
-				g.Label(strings.ToUpper(a.out.Format.Name)),
+				g.Label(strings.ToUpper(fmt.Sprintf("%s\n%d", a.out.Format.Name, counter))), // TODO: number of elements or lines ...
 			),
-			g.Label(string(a.out.String())).Wrapped(true)),
+			g.Label(string(txtDisplay)).Wrapped(true)),
 
-		a.listBox(),
+		a.listBox(""),
 		g.Label(statusMsg).Wrapped(true),
 	}
 }
@@ -80,8 +102,11 @@ func (a *App) searchView(search string) {
 
 	a.statusMsg = "Search: Type to find an action, enter or double click to execute, ESC to close"
 	a.visibleWidgets = []g.Widget{
-		g.InputText(&a.searchInput).Hint("Type to search for an action, ESC to quit"),
-		a.listBox(),
+		g.InputText(&a.searchInput).Hint("Type to fuzzy search for an action, ESC to close").
+			OnChange(func() {
+				a.searchView(a.searchInput)
+			}),
+		a.listBox(a.searchInput),
 		g.Label(a.statusMsg),
 	}
 }
@@ -102,11 +127,21 @@ func (a *App) editorView(statusMsg string) {
 	}
 }
 
-func (a *App) listBox() g.Widget {
+func (a *App) listBox(filter string) g.Widget {
 	actions := a.r.ActionsForData(a.out)
+
 	items := make([]string, len(actions))
 	for i := 0; i < len(actions); i++ {
 		items[i] = strings.Title(actions[i].Title())
+	}
+
+	if filter != "" {
+		matches := fuzzy.Find(a.searchInput, items)
+		res := make([]string, matches.Len())
+		for i, m := range matches {
+			res[i] = m.Str
+		}
+		items = res
 	}
 
 	listBox := g.ListBox("actionList", items).Size(g.Auto, -20)
@@ -122,7 +157,6 @@ func (a *App) listBox() g.Widget {
 			return
 		}
 		a.out = out
-		fmt.Println("action selected", act.Title(), "updated", out.String())
 
 		a.defaultView("Applied " + act.Title())
 	})
@@ -132,6 +166,29 @@ func (a *App) listBox() g.Widget {
 
 func (a *App) loop() {
 	g.SingleWindow().RegisterKeyboardShortcuts(
+		// up arrow command
+		giu.WindowShortcut{Key: giu.KeyUp, Callback: func() {
+			if a.state == HomeState || a.state == SearchState {
+				fmt.Println("UP")
+				// TODO
+			}
+		}},
+
+		// down arrow command
+		giu.WindowShortcut{Key: giu.KeyDown, Callback: func() {
+			if a.state == HomeState || a.state == SearchState {
+				fmt.Println("DOWN")
+				// TODO
+			}
+		}},
+
+		// enter command
+		giu.WindowShortcut{Key: giu.KeyEnter, Callback: func() {
+			if a.state == HomeState || a.state == SearchState {
+				// TODO
+			}
+		}},
+
 		// quit command
 		giu.WindowShortcut{Key: giu.KeyQ, Callback: func() {
 			if a.state == HomeState {
@@ -145,7 +202,6 @@ func (a *App) loop() {
 
 		// search command
 		giu.WindowShortcut{Key: giu.KeySlash, Callback: func() {
-			fmt.Println("Slash")
 			if a.state == HomeState {
 				a.statusMsg = "Search: Type to find an action, enter or double click to execute, ESC to close"
 				a.searchView("")
@@ -161,8 +217,6 @@ func (a *App) loop() {
 
 		// delete from stack command
 		giu.WindowShortcut{Key: giu.KeyBackspace, Callback: func() {
-			fmt.Println("action remove requested")
-
 			if a.state == HomeState {
 				d, oa, err := a.out.Undo(a.in)
 				if err != nil { // we should not have errors in the stack

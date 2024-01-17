@@ -62,7 +62,7 @@ func (r *ActionRegistry) RegisterAction(a Action) {
 // ordered alphabetically
 func (r *ActionRegistry) ActionsForText(search string) (actions []*Action) {
 	for k, a := range r.m {
-		if strings.HasPrefix(k, textFormat.Prefix+",") {
+		if strings.HasPrefix(k, TextFormat.Prefix+",") {
 			actions = append(actions, a)
 		}
 
@@ -78,7 +78,7 @@ func (r *ActionRegistry) ActionsForData(data *Data) (actions []*Action) {
 		}
 
 		// in case we have a textList we also want to apply text filter, that can output text
-		if data.Format == textListFormat && a.InputFormat == textFormat && a.OutputFormat == textFormat {
+		if data.Format == TextListFormat && a.InputFormat == TextFormat && a.OutputFormat == TextFormat {
 			actions = append(actions, a)
 		}
 

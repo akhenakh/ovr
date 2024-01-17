@@ -21,27 +21,27 @@ type Data struct {
 var ErrEmptyStack = errors.New("empty stack")
 
 func NewDataText(v []byte) *Data {
-	return &Data{RawValue: v, Format: textFormat}
+	return &Data{RawValue: v, Format: TextFormat}
 }
 
 func (d *Data) StoreTextValue(v []byte, a *Action) *Data {
-	return &Data{RawValue: v, Format: textFormat, Stack: append(d.Stack, a)}
+	return &Data{RawValue: v, Format: TextFormat, Stack: append(d.Stack, a)}
 }
 
 func (d *Data) StoreTextListValue(l []string, a *Action) *Data {
-	return &Data{Value: l, Format: textListFormat, Stack: append(d.Stack, a)}
+	return &Data{Value: l, Format: TextListFormat, Stack: append(d.Stack, a)}
 }
 
 func (d *Data) StoreTimeValue(t time.Time, a *Action) *Data {
-	return &Data{Value: t, Stack: append(d.Stack, a), Format: timeFormat}
+	return &Data{Value: t, Stack: append(d.Stack, a), Format: TimeFormat}
 }
 
 func (d *Data) StoreGeomValue(g geom.Geometry, a *Action) *Data {
-	return &Data{Value: g, Stack: append(d.Stack, a), Format: geoFormat}
+	return &Data{Value: g, Stack: append(d.Stack, a), Format: GeoFormat}
 }
 
 func (d *Data) StoreJSONValue(t time.Time, a *Action) *Data {
-	return &Data{Value: t, Stack: append(d.Stack, a), Format: jsonFormat}
+	return &Data{Value: t, Stack: append(d.Stack, a), Format: JSONFormat}
 }
 
 // Undo removed the last actions if any
@@ -69,9 +69,9 @@ func (d *Data) Undo(in []byte) (*Data, *Action, error) {
 
 func (d *Data) String() string {
 	switch d.Format {
-	case textFormat:
+	case TextFormat:
 		return string(d.RawValue)
-	case timeFormat:
+	case TimeFormat:
 		t := d.Value.(time.Time)
 		return t.String()
 	default:

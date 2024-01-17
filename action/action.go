@@ -30,12 +30,12 @@ type Format struct {
 type ActionType uint16
 
 var (
-	textFormat     = Format{"text", "t"}
-	binFormat      = Format{"bin", "b"}
-	timeFormat     = Format{"time", "T"}
-	jsonFormat     = Format{"json", "j"}
-	geoFormat      = Format{"geometry", "g"}
-	textListFormat = Format{"textList", "l"}
+	TextFormat     = Format{"text", "t"}
+	BinFormat      = Format{"bin", "b"}
+	TimeFormat     = Format{"time", "T"}
+	JSONFormat     = Format{"json", "j"}
+	GeoFormat      = Format{"geometry", "g"}
+	TextListFormat = Format{"textList", "l"}
 )
 
 func (a *Action) Transform(in *Data) (*Data, error) {
@@ -43,10 +43,10 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 	var err error
 
 	switch a.InputFormat {
-	case textFormat:
+	case TextFormat:
 		// the input format of the action needs to be applied to all
 		// list members if tbe data is textListFormat
-		if in.Format == textListFormat {
+		if in.Format == TextListFormat {
 			l, ok := in.Value.([]string)
 			if !ok {
 				return nil, fmt.Errorf("input not a list of string")
@@ -61,7 +61,7 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 				resp[i] = string(v.([]byte))
 			}
 			data = resp
-			a.OutputFormat = textListFormat
+			a.OutputFormat = TextListFormat
 		} else {
 			if len(in.RawValue) == 0 {
 				return nil, fmt.Errorf("value is empty")
@@ -72,7 +72,7 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 			}
 		}
 
-	case textListFormat:
+	case TextListFormat:
 		_, ok := in.Value.([]string)
 		if !ok {
 			return nil, fmt.Errorf("input not a list of string")
@@ -81,7 +81,7 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 		if err != nil {
 			return nil, err
 		}
-	case geoFormat:
+	case GeoFormat:
 		_, ok := in.Value.(geom.Geometry)
 		if !ok {
 			return nil, fmt.Errorf("input not a geometry")
@@ -91,7 +91,7 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 			return nil, err
 		}
 
-	case timeFormat:
+	case TimeFormat:
 		_, ok := in.Value.(time.Time)
 		if !ok {
 			return nil, fmt.Errorf("input not a time.Time")
@@ -105,25 +105,25 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 	}
 
 	switch a.OutputFormat {
-	case textFormat:
+	case TextFormat:
 		b, ok := data.([]byte)
 		if !ok {
 			return nil, fmt.Errorf("function does not return []byte")
 		}
 		return in.StoreTextValue(b, a), err
-	case textListFormat:
+	case TextListFormat:
 		l, ok := data.([]string)
 		if !ok {
 			return nil, fmt.Errorf("function does not return a []string")
 		}
 		return in.StoreTextListValue(l, a), err
-	case timeFormat:
+	case TimeFormat:
 		b, ok := data.(time.Time)
 		if !ok {
 			return nil, fmt.Errorf("function does not return a time.Time")
 		}
 		return in.StoreTimeValue(b, a), err
-	case geoFormat:
+	case GeoFormat:
 		g, ok := data.(geom.Geometry)
 		if !ok {
 			return nil, fmt.Errorf("function does not return a geom")

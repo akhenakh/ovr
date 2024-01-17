@@ -5,11 +5,11 @@ import "net/http"
 func GuessFormat(v []byte) Format {
 	if len(v) >= 3 {
 		if GuessFormatIsBinary(v) {
-			return binFormat
+			return BinFormat
 		}
 	}
 
-	return textFormat
+	return TextFormat
 }
 
 func GuessContentType(v []byte) string {
