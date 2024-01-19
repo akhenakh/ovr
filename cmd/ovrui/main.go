@@ -36,7 +36,7 @@ const (
 	ViewState
 )
 
-const defaultStatusMsg = "q quit, v view, / search"
+const defaultStatusMsg = "ESC quit, v view, / search"
 
 func newApp(in []byte) *App {
 	out := action.NewDataText(in)
@@ -67,11 +67,11 @@ func (a *App) defaultView(statusMsg string) {
 
 	txtDisplay := a.out.String()
 	if len(txtDisplay) > 400 {
-		txtDisplay = txtDisplay[0:400]
+		txtDisplay = txtDisplay[0:400] + "..."
 	}
 	lines := strings.Split(txtDisplay, "\n")
 	if len(lines) > 4 {
-		txtDisplay = strings.Join(lines[0:4], "\n")
+		txtDisplay = strings.Join(lines[0:4], "\n") + "..."
 	}
 
 	var info string
@@ -107,6 +107,9 @@ func (a *App) searchView(search string) {
 
 	a.statusMsg = "Search: Type to find an action, enter or double click to execute, ESC to close"
 	a.visibleWidgets = []g.Widget{
+		giu.Custom(func() {
+			giu.SetKeyboardFocusHere()
+		}),
 		g.InputText(&a.searchInput).Hint("Type to fuzzy search for an action, ESC to close").
 			OnChange(func() {
 				a.searchView(a.searchInput)
@@ -127,26 +130,29 @@ func (a *App) editorView(statusMsg string) {
 
 	editor.Text(a.out.String())
 	a.visibleWidgets = []g.Widget{
+		giu.Custom(func() {
+			giu.SetKeyboardFocusHere()
+		}),
 		editor.Size(g.Auto, -20),
 		g.Label(statusMsg),
 	}
 }
 
 func (a *App) listBox(filter string) g.Widget {
-	actions := a.r.ActionsForData(a.out)
+	actions := action.Actions(a.r.ActionsForData(a.out))
+
+	if filter != "" {
+		matches := fuzzy.FindFrom(a.searchInput, actions)
+		res := make(action.Actions, matches.Len())
+		for i, m := range matches {
+			res[i] = actions[m.Index]
+		}
+		actions = res
+	}
 
 	items := make([]string, len(actions))
 	for i := 0; i < len(actions); i++ {
 		items[i] = strings.Title(actions[i].Title())
-	}
-
-	if filter != "" {
-		matches := fuzzy.Find(a.searchInput, items)
-		res := make([]string, matches.Len())
-		for i, m := range matches {
-			res[i] = m.Str
-		}
-		items = res
 	}
 
 	listBox := g.ListBox("actionList", items).Size(g.Auto, -20)
@@ -154,6 +160,11 @@ func (a *App) listBox(filter string) g.Widget {
 	// when an action is selected in the list
 	listBox.OnDClick(func(idx int) {
 		act := actions[idx]
+		if act == nil {
+			a.defaultView("Error can't find this action")
+
+			return
+		}
 
 		out, err := act.Transform(a.out)
 		if err != nil {
@@ -194,17 +205,6 @@ func (a *App) loop() {
 			}
 		}},
 
-		// quit command
-		giu.WindowShortcut{Key: giu.KeyQ, Callback: func() {
-			if a.state == HomeState {
-				fmt.Printf("%s\n---\n%s\n", a.out.StackString(), a.out.String())
-
-				clipboard.Write(clipboard.FmtText, []byte(a.out.String()))
-
-				os.Exit(0)
-			}
-		}},
-
 		// search command
 		giu.WindowShortcut{Key: giu.KeySlash, Callback: func() {
 			if a.state == HomeState {
@@ -234,10 +234,16 @@ func (a *App) loop() {
 			}
 		}},
 
-		// close editor
+		// Escape from editor or Quit
 		giu.WindowShortcut{Key: giu.KeyEscape, Callback: func() {
 			if a.state == ViewState || a.state == SearchState {
 				a.defaultView(defaultStatusMsg)
+			} else if a.state == HomeState {
+				fmt.Printf("%s\n---\n%s\n", a.out.StackString(), a.out.String())
+
+				clipboard.Write(clipboard.FmtText, []byte(a.out.String()))
+
+				os.Exit(0)
 			}
 		}},
 	).Layout(a.visibleWidgets...)

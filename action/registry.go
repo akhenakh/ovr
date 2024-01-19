@@ -58,6 +58,15 @@ func (r *ActionRegistry) RegisterAction(a Action) {
 	}
 }
 
+// ActionByName returns an action for an exact name match
+func (r *ActionRegistry) ActionByName(name string) (action *Action) {
+	a, ok := r.m[name]
+	if !ok {
+		return nil
+	}
+	return a
+}
+
 // ActionsForText returns a list of actions, prefix by search, all if search is empty
 // ordered alphabetically
 func (r *ActionRegistry) ActionsForText(search string) (actions []*Action) {

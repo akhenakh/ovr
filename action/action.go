@@ -2,6 +2,7 @@ package action
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/peterstace/simplefeatures/geom"
@@ -21,6 +22,8 @@ type Action struct {
 	// change it to a variadic opts ...
 	Func func(any) (any, error)
 }
+
+type Actions []*Action
 
 type Format struct {
 	Name   string
@@ -136,7 +139,7 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 }
 
 func (a *Action) Title() string {
-	return a.Names[0]
+	return strings.Title(a.Names[0])
 }
 
 func (a *Action) Description() string {
@@ -145,4 +148,18 @@ func (a *Action) Description() string {
 
 func (a *Action) FilterValue() string {
 	return a.Title()
+}
+
+func (a *Action) FullDescription() string {
+	return a.Title() + " " + a.Doc
+}
+
+func (actions Actions) Len() int {
+	return len(actions)
+}
+
+// String returns a full description + name
+// used for display
+func (actions Actions) String(idx int) string {
+	return actions[idx].Description()
 }
