@@ -152,7 +152,7 @@ func (a *App) listBox(filter string) g.Widget {
 
 	items := make([]string, len(actions))
 	for i := 0; i < len(actions); i++ {
-		items[i] = strings.Title(actions[i].Title())
+		items[i] = actions[i].FullDescription()
 	}
 
 	listBox := g.ListBox("actionList", items).Size(g.Auto, -20)

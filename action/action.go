@@ -151,7 +151,7 @@ func (a *Action) FilterValue() string {
 }
 
 func (a *Action) FullDescription() string {
-	return a.Title() + " " + a.Doc
+	return a.Title() + ": " + a.Doc
 }
 
 func (actions Actions) Len() int {
