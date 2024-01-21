@@ -24,6 +24,8 @@ type App struct {
 	statusMsg      string
 	dataMsg        string
 	visibleWidgets []g.Widget
+	selectedIndex  int32
+	actionsList    action.Actions
 	searchInput    string
 	state          UIState
 }
@@ -50,10 +52,11 @@ func newApp(in []byte) *App {
 	r := action.DefaultRegistry()
 
 	a := &App{
-		in:        in,
-		out:       out,
-		r:         r,
-		statusMsg: statusMsg,
+		in:            in,
+		out:           out,
+		r:             r,
+		statusMsg:     statusMsg,
+		selectedIndex: 0,
 	}
 
 	a.defaultView(statusMsg)
@@ -113,6 +116,7 @@ func (a *App) searchView(search string) {
 		g.InputText(&a.searchInput).Hint("Type to fuzzy search for an action, ESC to close").
 			OnChange(func() {
 				a.searchView(a.searchInput)
+				a.selectedIndex = 0
 			}),
 		a.listBox(a.searchInput),
 		g.Label(a.statusMsg),
@@ -141,6 +145,8 @@ func (a *App) editorView(statusMsg string) {
 func (a *App) listBox(filter string) g.Widget {
 	actions := action.Actions(a.r.ActionsForData(a.out))
 
+	a.actionsList = actions
+
 	if filter != "" {
 		matches := fuzzy.FindFrom(a.searchInput, actions)
 		res := make(action.Actions, matches.Len())
@@ -148,6 +154,7 @@ func (a *App) listBox(filter string) g.Widget {
 			res[i] = actions[m.Index]
 		}
 		actions = res
+		a.actionsList = res
 	}
 
 	items := make([]string, len(actions))
@@ -155,7 +162,7 @@ func (a *App) listBox(filter string) g.Widget {
 		items[i] = actions[i].FullDescription()
 	}
 
-	listBox := g.ListBox("actionList", items).Size(g.Auto, -20)
+	listBox := g.ListBox("actionList", items).Size(g.Auto, -20).SelectedIndex(&a.selectedIndex)
 
 	// when an action is selected in the list
 	listBox.OnDClick(func(idx int) {
@@ -185,23 +192,44 @@ func (a *App) loop() {
 		// up arrow command
 		giu.WindowShortcut{Key: giu.KeyUp, Callback: func() {
 			if a.state == HomeState || a.state == SearchState {
-				fmt.Println("UP")
-				// TODO
+				if a.selectedIndex == 0 {
+					return
+				}
+				a.selectedIndex--
 			}
 		}},
 
 		// down arrow command
 		giu.WindowShortcut{Key: giu.KeyDown, Callback: func() {
 			if a.state == HomeState || a.state == SearchState {
-				fmt.Println("DOWN")
-				// TODO
+				if a.selectedIndex+1 >= int32(a.actionsList.Len()) {
+					return
+				}
+				a.selectedIndex++
 			}
 		}},
 
 		// enter command
 		giu.WindowShortcut{Key: giu.KeyEnter, Callback: func() {
 			if a.state == HomeState || a.state == SearchState {
-				// TODO
+				a.searchInput = ""
+
+				act := a.actionsList[a.selectedIndex]
+				if act == nil {
+					a.defaultView("Error can't find this action")
+
+					return
+				}
+
+				out, err := act.Transform(a.out)
+				if err != nil {
+					a.defaultView("Error " + err.Error())
+
+					return
+				}
+				a.out = out
+
+				a.defaultView("Applied " + act.Title())
 			}
 		}},
 
@@ -234,9 +262,10 @@ func (a *App) loop() {
 			}
 		}},
 
-		// Escape from editor or Quit
+		// Back for Editor & View, Quit for Home
 		giu.WindowShortcut{Key: giu.KeyEscape, Callback: func() {
 			if a.state == ViewState || a.state == SearchState {
+				a.searchInput = ""
 				a.defaultView(defaultStatusMsg)
 			} else if a.state == HomeState {
 				fmt.Printf("%s\n---\n%s\n", a.out.StackString(), a.out.String())
@@ -256,7 +285,7 @@ func main() {
 	}
 	input := []byte(clipboard.Read(clipboard.FmtText))
 
-	wnd := g.NewMasterWindow("OVR", 640, 480, 0)
+	wnd := g.NewMasterWindow("OVR", 640, 480, g.MasterWindowFlagsFrameless)
 	app := newApp(input)
 	wnd.Run(app.loop)
 }

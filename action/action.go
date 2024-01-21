@@ -161,5 +161,5 @@ func (actions Actions) Len() int {
 // String returns a full description + name
 // used for display
 func (actions Actions) String(idx int) string {
-	return actions[idx].Description()
+	return actions[idx].FullDescription()
 }
