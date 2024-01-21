@@ -13,14 +13,24 @@ const (
 	ParseAction
 )
 
+type ActionParameter int
+
+const (
+	IntActionParameter ActionParameter = iota
+	FloatActionParameter
+	StringActionParameter
+)
+
 type Action struct {
-	Doc          string
-	Names        []string // command and aliases
-	Type         ActionType
-	InputFormat  Format
-	OutputFormat Format
+	Doc             string
+	Names           []string // command and aliases
+	Type            ActionType
+	InputFormat     Format
+	OutputFormat    Format
+	Parameters      []ActionParameter
+	InputParameters []any
 	// change it to a variadic opts ...
-	Func func(any) (any, error)
+	Func func(*Action, any) (any, error)
 }
 
 type Actions []*Action
@@ -45,6 +55,26 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 	var data any
 	var err error
 
+	// validating input params
+	if len(a.Parameters) != len(a.InputParameters) {
+		return nil, fmt.Errorf("input parameters required")
+	}
+
+	for i, p := range a.Parameters {
+		switch p {
+		case IntActionParameter:
+			_, ok := a.InputParameters[i].(int)
+			if !ok {
+				return nil, fmt.Errorf("parameter %d is not an integer", i)
+			}
+		case StringActionParameter:
+			_, ok := a.InputParameters[i].(string)
+			if !ok {
+				return nil, fmt.Errorf("parameter %d is not a string", i)
+			}
+		}
+	}
+
 	switch a.InputFormat {
 	case TextFormat:
 		// the input format of the action needs to be applied to all
@@ -57,7 +87,7 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 
 			resp := make([]string, len(l))
 			for i, s := range l {
-				v, err := a.Func([]byte(s))
+				v, err := a.Func(a, []byte(s))
 				if err != nil {
 					return nil, err
 				}
@@ -69,7 +99,7 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 			if len(in.RawValue) == 0 {
 				return nil, fmt.Errorf("value is empty")
 			}
-			data, err = a.Func(in.RawValue)
+			data, err = a.Func(a, in.RawValue)
 			if err != nil {
 				return nil, err
 			}
@@ -80,7 +110,7 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 		if !ok {
 			return nil, fmt.Errorf("input not a list of string")
 		}
-		data, err = a.Func(in.Value)
+		data, err = a.Func(a, in.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -89,7 +119,7 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 		if !ok {
 			return nil, fmt.Errorf("input not a geometry")
 		}
-		data, err = a.Func(in.Value)
+		data, err = a.Func(a, in.Value)
 		if !ok {
 			return nil, err
 		}
@@ -99,7 +129,7 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 		if !ok {
 			return nil, fmt.Errorf("input not a time.Time")
 		}
-		data, err = a.Func(in.Value)
+		data, err = a.Func(a, in.Value)
 		if !ok {
 			return nil, err
 		}

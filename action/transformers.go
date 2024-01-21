@@ -26,7 +26,7 @@ var upperAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		caser := cases.Upper(language.Und)
 		upper := caser.String(string(in.([]byte)))
 		return []byte(upper), nil
@@ -39,7 +39,7 @@ var lowerAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		caser := cases.Lower(language.Und)
 		lower := caser.String(string(in.([]byte)))
 		return []byte(lower), nil
@@ -52,7 +52,7 @@ var titleAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		caser := cases.Title(language.Und)
 		titleStr := caser.String(string(in.([]byte)))
 		return []byte(titleStr), nil
@@ -65,7 +65,7 @@ var trimSpaceAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		return []byte(strings.TrimSpace(string(in.([]byte)))), nil
 	},
 }
@@ -76,7 +76,7 @@ var quoteAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		return []byte(strconv.Quote(string(in.([]byte)))), nil
 	},
 }
@@ -87,7 +87,7 @@ var unquoteAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		unescape, err := strconv.Unquote(string(in.([]byte)))
 		return []byte(unescape), err
 	},
@@ -99,7 +99,7 @@ var md5HashAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		h := md5.New()
 		io.WriteString(h, string(in.([]byte)))
 		return []byte(hex.EncodeToString(h.Sum(nil))), nil
@@ -112,7 +112,7 @@ var sha1HashAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		h := sha1.New()
 		io.WriteString(h, string(in.([]byte)))
 		return []byte(hex.EncodeToString(h.Sum(nil))), nil
@@ -125,7 +125,7 @@ var sha256HashAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		h := sha256.New()
 		io.WriteString(h, string(in.([]byte)))
 		return []byte(hex.EncodeToString(h.Sum(nil))), nil
@@ -138,7 +138,7 @@ var sha512HashAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		h := sha512.New()
 		io.WriteString(h, string(in.([]byte)))
 		return []byte(hex.EncodeToString(h.Sum(nil))), nil
@@ -151,7 +151,7 @@ var fromBase64StringAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		return base64.StdEncoding.DecodeString(string(in.([]byte)))
 	},
 }
@@ -162,7 +162,7 @@ var parseJSONDateStringAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TimeFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		return time.Parse("2006-01-02T15:04:05Z0700", string(in.([]byte)))
 	},
 }
@@ -173,7 +173,7 @@ var jsonCompactAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		dst := &bytes.Buffer{}
 		if err := json.Compact(dst, in.([]byte)); err != nil {
 			return nil, err
@@ -188,7 +188,7 @@ var toBase64StringAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		return []byte(base64.StdEncoding.EncodeToString(in.([]byte))), nil
 	},
 }
@@ -199,7 +199,7 @@ var fromHexStringAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		return hex.DecodeString(strings.ReplaceAll(string(in.([]byte)), " ", ""))
 	},
 }
@@ -210,7 +210,7 @@ var toHexStringAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		return []byte(hex.EncodeToString(in.([]byte))), nil
 	},
 }
@@ -221,7 +221,7 @@ var estTimeAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TimeFormat,
 	OutputFormat: TimeFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		est, _ := time.LoadLocation("EST")
 		return in.(time.Time).In(est), nil
 	},
@@ -233,7 +233,7 @@ var etTimeAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TimeFormat,
 	OutputFormat: TimeFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		est, _ := time.LoadLocation("ET")
 		return in.(time.Time).In(est), nil
 	},
@@ -245,7 +245,7 @@ var utcTimeAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TimeFormat,
 	OutputFormat: TimeFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		est, _ := time.LoadLocation("UTC")
 		return in.(time.Time).In(est), nil
 	},
@@ -257,7 +257,7 @@ var isoTimeAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TimeFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		return []byte(in.(time.Time).Format(time.RFC3339)), nil
 	},
 }
@@ -268,7 +268,7 @@ var timeEpochAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TimeFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		return []byte(fmt.Sprintf("%d", in.(time.Time).Unix())), nil
 	},
 }
@@ -279,7 +279,7 @@ var epochTimeAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TimeFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		ts, err := strconv.Atoi(string(in.([]byte)))
 		if err != nil {
 			return nil, err
@@ -295,7 +295,7 @@ var commaTextListAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextListFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		l := strings.Split(string(in.([]byte)), ",")
 		if len(l) <= 1 {
 			return []string{}, errors.New("can't split using ,")
@@ -311,7 +311,7 @@ var jwtTextListAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TextListFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		l := strings.Split(string(in.([]byte)), ".")
 		if len(l) != 3 {
 			return []string{}, errors.New("not a valid JWT")
@@ -339,7 +339,7 @@ var textListJoinCommaAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextListFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		l := in.([]string)
 		return []byte(strings.Join(l, ",")), nil
 	},
@@ -351,7 +351,7 @@ var textListFirstAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextListFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		l := in.([]string)
 		return []byte(l[0]), nil
 	},
@@ -363,8 +363,26 @@ var textListLastAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextListFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		l := in.([]string)
 		return []byte(l[len(l)-1]), nil
+	},
+}
+
+var textListIndexAction = Action{
+	Doc:          "Select the element from a list at index parameter",
+	Names:        []string{"index"},
+	Type:         TransformAction,
+	InputFormat:  TextListFormat,
+	OutputFormat: TextFormat,
+	Parameters:   []ActionParameter{IntActionParameter},
+	Func: func(a *Action, in any) (any, error) {
+		l := in.([]string)
+		// first param is an int
+		p := a.InputParameters[0].(int)
+		if p < 0 || p > len(l)-1 {
+			return nil, fmt.Errorf("index is out of list limits")
+		}
+		return []byte(l[p]), nil
 	},
 }

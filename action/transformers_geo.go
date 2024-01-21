@@ -32,7 +32,7 @@ var toGeoJSONAction = Action{
 	Type:         TransformAction,
 	InputFormat:  GeoFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		return json.Marshal(in.(geom.Geometry))
 	},
 }
@@ -43,7 +43,7 @@ var fromGeoJSONAction = Action{
 	Type:         ParseAction,
 	InputFormat:  TextFormat,
 	OutputFormat: GeoFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		var g geom.Geometry
 		err := json.Unmarshal(in.([]byte), &g)
 		return g, err
@@ -56,7 +56,7 @@ var fromWKTAction = Action{
 	Type:         ParseAction,
 	InputFormat:  TextFormat,
 	OutputFormat: GeoFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		return geom.UnmarshalWKT(string(in.([]byte)))
 	},
 }
@@ -67,7 +67,7 @@ var toWKTAction = Action{
 	Type:         TransformAction,
 	InputFormat:  GeoFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		return []byte(in.(geom.Geometry).AsText()), nil
 	},
 }
@@ -78,7 +78,7 @@ var centroidAction = Action{
 	Type:         TransformAction,
 	InputFormat:  GeoFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		return []byte(in.(geom.Geometry).Centroid().AsText()), nil
 	},
 }
@@ -89,7 +89,7 @@ var geojsonioAction = Action{
 	Type:         TransformAction,
 	InputFormat:  GeoFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		geojson, err := json.Marshal(in.(geom.Geometry))
 		if err != nil {
 			return nil, err
@@ -108,7 +108,7 @@ var countryAction = Action{
 	Type:         TransformAction,
 	InputFormat:  GeoFormat,
 	OutputFormat: TextFormat,
-	Func: func(in any) (any, error) {
+	Func: func(a *Action, in any) (any, error) {
 		xy, ok := in.(geom.Geometry).Centroid().XY()
 		if !ok {
 			return nil, fmt.Errorf("no coordinates for centroid")

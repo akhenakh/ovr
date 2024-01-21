@@ -1,6 +1,7 @@
 package action
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -22,7 +23,7 @@ var all = []Action{
 	parseJSONDateStringAction, epochTimeAction,
 	estTimeAction, etTimeAction, utcTimeAction, isoTimeAction, timeEpochAction,
 	commaTextListAction, jwtTextListAction, textListJoinCommaAction, jsonCompactAction,
-	textListFirstAction, textListLastAction,
+	textListFirstAction, textListLastAction, textListIndexAction,
 }
 
 func DefaultRegistry() *ActionRegistry {
@@ -54,15 +55,20 @@ func (r *ActionRegistry) RegisterActions(actions ...Action) {
 func (r *ActionRegistry) RegisterAction(a Action) {
 	for _, name := range a.Names {
 		key := a.InputFormat.Prefix + "," + name
+
+		if _, exist := r.m[key]; exist {
+			panic(fmt.Sprintf("registering action conflict for %s", key))
+		}
 		r.m[key] = &a
 	}
 }
 
 // ActionByName returns an action for an exact name match
-func (r *ActionRegistry) ActionByName(name string) (action *Action) {
-	a, ok := r.m[name]
+func (r *ActionRegistry) MustActionByName(format Format, name string) (action *Action) {
+	key := format.Prefix + "," + name
+	a, ok := r.m[key]
 	if !ok {
-		return nil
+		panic(fmt.Sprintf("no action %s", key))
 	}
 	return a
 }

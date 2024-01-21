@@ -18,24 +18,35 @@ import (
 var bigFont *g.FontInfo
 
 type App struct {
-	in             []byte
-	out            *action.Data
-	r              *action.ActionRegistry
-	statusMsg      string
-	dataMsg        string
+	in  []byte
+	out *action.Data
+	r   *action.ActionRegistry
+
+	// UI current state
+	state uiState
+
+	statusMsg string
+
 	visibleWidgets []g.Widget
-	selectedIndex  int32
-	actionsList    action.Actions
-	searchInput    string
-	state          UIState
+
+	// list of actions
+	selectedIndex int32
+	actionsList   action.Actions
+
+	// search
+	searchInput string
+
+	// params
+	actionParams []any
 }
 
-type UIState uint8
+type uiState uint8
 
 const (
-	HomeState UIState = iota
-	SearchState
-	ViewState
+	homeState uiState = iota
+	searchState
+	viewState
+	paramsState
 )
 
 const defaultStatusMsg = "ESC quit, v view, / search"
@@ -66,7 +77,7 @@ func newApp(in []byte) *App {
 
 // defaultView display the "home" with the list of actions
 func (a *App) defaultView(statusMsg string) {
-	a.state = HomeState
+	a.state = homeState
 
 	txtDisplay := a.out.String()
 	if len(txtDisplay) > 400 {
@@ -105,17 +116,18 @@ func (a *App) defaultView(statusMsg string) {
 }
 
 // searchView display the filtered list of actions
-func (a *App) searchView(search string) {
-	a.state = SearchState
+func (a *App) searchView() {
+	a.state = searchState
 
 	a.statusMsg = "Search: Type to find an action, enter or double click to execute, ESC to close"
 	a.visibleWidgets = []g.Widget{
-		giu.Custom(func() {
-			giu.SetKeyboardFocusHere()
+		g.Custom(func() {
+			g.SetItemDefaultFocus()
+			g.SetKeyboardFocusHere()
 		}),
 		g.InputText(&a.searchInput).Hint("Type to fuzzy search for an action, ESC to close").
 			OnChange(func() {
-				a.searchView(a.searchInput)
+				a.searchView()
 				a.selectedIndex = 0
 			}),
 		a.listBox(a.searchInput),
@@ -125,7 +137,7 @@ func (a *App) searchView(search string) {
 
 // editorView displays the full window editor
 func (a *App) editorView(statusMsg string) {
-	a.state = ViewState
+	a.state = viewState
 
 	editor := g.CodeEditor().
 		ShowWhitespaces(false).
@@ -140,6 +152,38 @@ func (a *App) editorView(statusMsg string) {
 		editor.Size(g.Auto, -20),
 		g.Label(statusMsg),
 	}
+}
+
+// editorView displays the full window editor
+func (a *App) paramsView(act *action.Action) {
+	a.state = paramsState
+
+	widgets := []g.Widget{g.Label(fmt.Sprintf("Enter parameters for %s action", act.Title()))}
+
+	a.actionParams = make([]any, len(act.Parameters))
+
+	for i, p := range act.Parameters {
+		switch p {
+		case action.IntActionParameter:
+			var val int32
+			a.actionParams[i] = &val
+
+			if i == 0 {
+				widgets = append(widgets, g.Custom(func() {
+					giu.SetKeyboardFocusHere()
+				}))
+			}
+
+			widgets = append(widgets, g.Row(
+				g.Style().SetFont(bigFont).To(
+					g.InputInt(&val).Label(fmt.Sprintf("%s %d param int", act.Title(), i)),
+				),
+			),
+				g.Label("ESC to quit, enter to validate"))
+		}
+	}
+
+	a.visibleWidgets = widgets
 }
 
 func (a *App) listBox(filter string) g.Widget {
@@ -173,6 +217,13 @@ func (a *App) listBox(filter string) g.Widget {
 			return
 		}
 
+		// This action has parameters, we need the ui to ask for those
+		if len(act.Parameters) > 0 {
+			a.paramsView(act)
+
+			return
+		}
+
 		out, err := act.Transform(a.out)
 		if err != nil {
 			a.defaultView("Error " + err.Error())
@@ -191,7 +242,7 @@ func (a *App) loop() {
 	g.SingleWindow().RegisterKeyboardShortcuts(
 		// up arrow command
 		giu.WindowShortcut{Key: giu.KeyUp, Callback: func() {
-			if a.state == HomeState || a.state == SearchState {
+			if a.state == homeState || a.state == searchState {
 				if a.selectedIndex == 0 {
 					return
 				}
@@ -201,7 +252,7 @@ func (a *App) loop() {
 
 		// down arrow command
 		giu.WindowShortcut{Key: giu.KeyDown, Callback: func() {
-			if a.state == HomeState || a.state == SearchState {
+			if a.state == homeState || a.state == searchState {
 				if a.selectedIndex+1 >= int32(a.actionsList.Len()) {
 					return
 				}
@@ -211,12 +262,19 @@ func (a *App) loop() {
 
 		// enter command
 		giu.WindowShortcut{Key: giu.KeyEnter, Callback: func() {
-			if a.state == HomeState || a.state == SearchState {
+			if a.state == homeState || a.state == searchState {
 				a.searchInput = ""
 
 				act := a.actionsList[a.selectedIndex]
 				if act == nil {
 					a.defaultView("Error can't find this action")
+
+					return
+				}
+
+				// This action has parameters, we need the ui to ask for those
+				if len(act.Parameters) > 0 {
+					a.paramsView(act)
 
 					return
 				}
@@ -235,22 +293,22 @@ func (a *App) loop() {
 
 		// search command
 		giu.WindowShortcut{Key: giu.KeySlash, Callback: func() {
-			if a.state == HomeState {
+			if a.state == homeState {
 				a.statusMsg = "Search: Type to find an action, enter or double click to execute, ESC to close"
-				a.searchView("")
+				a.searchView()
 			}
 		}},
 
 		// view command
 		giu.WindowShortcut{Key: giu.KeyV, Callback: func() {
-			if a.state == HomeState {
+			if a.state == homeState {
 				a.editorView("ESC to quit the editor")
 			}
 		}},
 
 		// delete from stack command
 		giu.WindowShortcut{Key: giu.KeyBackspace, Callback: func() {
-			if a.state == HomeState {
+			if a.state == homeState {
 				d, oa, err := a.out.Undo(a.in)
 				if err != nil { // we should not have errors in the stack
 					a.statusMsg = "Error " + err.Error()
@@ -264,10 +322,10 @@ func (a *App) loop() {
 
 		// Back for Editor & View, Quit for Home
 		giu.WindowShortcut{Key: giu.KeyEscape, Callback: func() {
-			if a.state == ViewState || a.state == SearchState {
+			if a.state == viewState || a.state == searchState || a.state == paramsState {
 				a.searchInput = ""
 				a.defaultView(defaultStatusMsg)
-			} else if a.state == HomeState {
+			} else if a.state == homeState {
 				fmt.Printf("%s\n---\n%s\n", a.out.StackString(), a.out.String())
 
 				clipboard.Write(clipboard.FmtText, []byte(a.out.String()))
