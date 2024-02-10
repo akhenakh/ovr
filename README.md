@@ -12,20 +12,19 @@ Enable geo features.
 go build -tags geo -o ovr ./cmd/ovr
 ```
 ## Features
-- Fuzzy search for block names
-- Apply actions, cancel actions using backspace
-- Parse text, chain & transform
-- Known formats (multiline, csv, json ..) filtering, transforming
-- Plot 
-- Highlight known code
-- Create scripts using TUI, replay scripts with simple CLI options
+- [X] Fuzzy search for block names
+- [X] Apply actions, cancel actions using backspace
+- [X] Parse text, chain & transform
+- [ ] Known formats (multiline, csv, json ..) filtering, transforming
+- [ ] Plot 
+- [ ] Highlight known code
+- [ ] Create scripts using TUI, replay scripts with simple CLI options
 
 ## Inputs Outputs
 - from/to clipboard
 - stdin
 - editor https://github.com/charmbracelet/bubbletea/tree/master/examples/textarea
 - file?
-
 
 ## Format
 
@@ -45,7 +44,11 @@ go build -tags geo -o ovr ./cmd/ovr
 - time, epoch, parse
 - bin
 
-
+## Config file
+- [ ] Font name & Size
+- [ ] add commands by invoking shell, txt to txt
+      - name: count_lines
+        pipe: "wc -l"
 
 ## Transformations
 
@@ -63,8 +66,9 @@ go build -tags geo -o ovr ./cmd/ovr
 - [X] JWT decode
 - [ ] JWT Validate
 - [ ] known payloads (AWS...), logs severity, golang stack, java stack...
-- [X] Minify 
+- [X] JSON Minify 
 - [ ] sort by a column/property
+- [ ] sort yaml
 - [ ] Add/Set value
 - [ ] conversion (json, csv, yaml, toml)
 - [ ] output to a configurable filename, xxx-%Y%m%d.txt
@@ -78,6 +82,7 @@ go build -tags geo -o ovr ./cmd/ovr
 - [ ] URL
 - [ ] Source Code, format, colorize
 - [ ] Save to file
+- [ ] crc32
 
 ## Filter 
 - [ ] dedup from a list
