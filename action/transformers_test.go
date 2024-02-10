@@ -185,6 +185,8 @@ func TestAction_TextListTextTransform(t *testing.T) {
 		{action: "index", in: []string{"A", "B", "C"}, params: []any{1}, want: "B", wantErr: false},
 		{action: "index", in: []string{"A", "B", "C"}, params: []any{2}, want: "C", wantErr: false},
 		{action: "index", in: []string{"A", "B", "C"}, params: []any{3}, want: "", wantErr: true},
+		{action: "join", in: []string{"A", "B", "C"}, params: []any{"|"}, want: "A|B|C", wantErr: false},
+		{action: "line", in: []string{"A", "B", "C"}, params: nil, want: "A\nB\nC", wantErr: false},
 	}
 
 	for _, tt := range tests {

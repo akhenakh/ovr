@@ -334,7 +334,7 @@ var jwtTextListAction = Action{
 }
 
 var textListJoinCommaAction = Action{
-	Doc:          "Join a list separated by ,",
+	Doc:          "Join a list with a comma ,",
 	Names:        []string{"comma"},
 	Type:         TransformAction,
 	InputFormat:  TextListFormat,
@@ -342,6 +342,34 @@ var textListJoinCommaAction = Action{
 	Func: func(a *Action, in any) (any, error) {
 		l := in.([]string)
 		return []byte(strings.Join(l, ",")), nil
+	},
+}
+
+var textListJoinNewLineAction = Action{
+	Doc:          "Join a list with new lines",
+	Names:        []string{"line"},
+	Type:         TransformAction,
+	InputFormat:  TextListFormat,
+	OutputFormat: TextFormat,
+	Func: func(a *Action, in any) (any, error) {
+		l := in.([]string)
+		return []byte(strings.Join(l, "\n")), nil
+	},
+}
+
+var textListCharJoinAction = Action{
+	Doc:          "Join a list with a provided char",
+	Names:        []string{"join"},
+	Type:         TransformAction,
+	InputFormat:  TextListFormat,
+	OutputFormat: TextFormat,
+	Parameters:   []ActionParameter{StringActionParameter},
+	Func: func(a *Action, in any) (any, error) {
+		l := in.([]string)
+
+		// first param is a string
+		p := a.InputParameters[0].(string)
+		return []byte(strings.Join(l, p)), nil
 	},
 }
 

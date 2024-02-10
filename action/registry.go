@@ -22,7 +22,7 @@ var all = []Action{
 	toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
 	parseJSONDateStringAction, epochTimeAction,
 	estTimeAction, etTimeAction, utcTimeAction, isoTimeAction, timeEpochAction,
-	commaTextListAction, jwtTextListAction, textListJoinCommaAction, jsonCompactAction,
+	commaTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction,
 	textListFirstAction, textListLastAction, textListIndexAction,
 }
 
