@@ -116,20 +116,24 @@ func (a *App) defaultView(statusMsg string) {
 }
 
 // searchView display the filtered list of actions
-func (a *App) searchView() {
+func (a *App) searchView(focus bool) {
 	a.state = searchState
 
+	inputText := g.InputText(&a.searchInput).Hint("Type to fuzzy search for an action, ESC to close").
+		OnChange(func() {
+			a.searchView(false)
+			a.selectedIndex = 0
+		})
+	if !focus {
+		inputText = a.visibleWidgets[1].(*g.InputTextWidget)
+	}
 	a.statusMsg = "Search: Type to find an action, enter or double click to execute, ESC to close"
 	a.visibleWidgets = []g.Widget{
 		g.Custom(func() {
-			g.SetItemDefaultFocus()
 			g.SetKeyboardFocusHere()
+			g.SetItemDefaultFocus()
 		}),
-		g.InputText(&a.searchInput).Hint("Type to fuzzy search for an action, ESC to close").
-			OnChange(func() {
-				a.searchView()
-				a.selectedIndex = 0
-			}),
+		inputText,
 		a.listBox(a.searchInput),
 		g.Label(a.statusMsg),
 	}
@@ -295,7 +299,7 @@ func (a *App) loop() {
 		giu.WindowShortcut{Key: giu.KeySlash, Callback: func() {
 			if a.state == homeState {
 				a.statusMsg = "Search: Type to find an action, enter or double click to execute, ESC to close"
-				a.searchView()
+				a.searchView(true)
 			}
 		}},
 
