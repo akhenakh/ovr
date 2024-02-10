@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"image/color"
 	"os"
@@ -14,6 +15,9 @@ import (
 
 	"github.com/akhenakh/ovr/action"
 )
+
+//go:embed iosevskanerdfont.ttf
+var bigFontBytes []byte
 
 var bigFont *g.FontInfo
 
@@ -54,7 +58,7 @@ const defaultStatusMsg = "ESC quit, v view, / search"
 func newApp(in []byte) *App {
 	out := action.NewDataText(in)
 
-	bigFont = g.Context.FontAtlas.AddFont("iosevskanerdfont.ttf", 20)
+	bigFont = g.Context.FontAtlas.AddFontFromBytes("iosevskanerdfont.ttf", bigFontBytes, 20)
 
 	g.Context.FontAtlas.SetDefaultFont("iosevskanerdfont.ttf", 15)
 
