@@ -60,7 +60,7 @@ func newApp(in []byte) *App {
 
 	bigFont = g.Context.FontAtlas.AddFontFromBytes("iosevskanerdfont.ttf", bigFontBytes, 20)
 
-	g.Context.FontAtlas.SetDefaultFont("iosevskanerdfont.ttf", 15)
+	g.Context.FontAtlas.SetDefaultFontFromBytes(bigFontBytes, 15)
 
 	statusMsg := defaultStatusMsg
 
