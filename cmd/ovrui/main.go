@@ -170,7 +170,6 @@ func (a *App) paramsView(act *action.Action) {
 		switch p {
 		case action.IntActionParameter:
 			var val int32
-			a.actionParams[i] = &val
 
 			if i == 0 {
 				widgets = append(widgets, g.Custom(func() {
@@ -180,7 +179,11 @@ func (a *App) paramsView(act *action.Action) {
 
 			widgets = append(widgets, g.Row(
 				g.Style().SetFont(bigFont).To(
-					g.InputInt(&val).Label(fmt.Sprintf("%s %d param int", act.Title(), i)),
+					g.InputInt(&val).
+						Label(fmt.Sprintf("%s %d param int", act.Title(), i)).
+						OnChange(func() {
+							a.actionParams[i] = int(val)
+						}),
 				),
 			),
 				g.Label("ESC to quit, enter to validate"))
@@ -266,15 +269,15 @@ func (a *App) loop() {
 
 		// enter command
 		giu.WindowShortcut{Key: giu.KeyEnter, Callback: func() {
+			act := a.actionsList[a.selectedIndex]
+			if act == nil {
+				a.defaultView("Error can't find this action")
+
+				return
+			}
+
 			if a.state == homeState || a.state == searchState {
 				a.searchInput = ""
-
-				act := a.actionsList[a.selectedIndex]
-				if act == nil {
-					a.defaultView("Error can't find this action")
-
-					return
-				}
 
 				// This action has parameters, we need the ui to ask for those
 				if len(act.Parameters) > 0 {
@@ -292,6 +295,25 @@ func (a *App) loop() {
 				a.out = out
 
 				a.defaultView("Applied " + act.Title())
+			} else if a.state == paramsState {
+				if len(a.actionParams) != len(act.Parameters) {
+					a.defaultView("Error incorrect number of parameters")
+
+					return
+				}
+
+				act.InputParameters = a.actionParams
+
+				out, err := act.Transform(a.out)
+				if err != nil {
+					a.defaultView("Error " + err.Error())
+
+					return
+				}
+				a.out = out
+
+				a.defaultView("Applied " + act.Title())
+
 			}
 		}},
 

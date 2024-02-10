@@ -65,12 +65,12 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 		case IntActionParameter:
 			_, ok := a.InputParameters[i].(int)
 			if !ok {
-				return nil, fmt.Errorf("parameter %d is not an integer", i)
+				return nil, fmt.Errorf("parameter at position %d is not an integer %T", i, a.InputParameters[i])
 			}
 		case StringActionParameter:
 			_, ok := a.InputParameters[i].(string)
 			if !ok {
-				return nil, fmt.Errorf("parameter %d is not a string", i)
+				return nil, fmt.Errorf("parameter at position %d is not a string %T", i, a.InputParameters[i])
 			}
 		}
 	}
