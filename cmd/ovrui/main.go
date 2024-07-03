@@ -217,7 +217,7 @@ func (a *App) listBox(filter string) g.Widget {
 		items[i] = actions[i].FullDescription()
 	}
 
-	listBox := g.ListBox("actionList", items).Size(g.Auto, -20).SelectedIndex(&a.selectedIndex)
+	listBox := g.ListBox(items).Size(g.Auto, -20).SelectedIndex(&a.selectedIndex)
 
 	// when an action is selected in the list
 	listBox.OnDClick(func(idx int) {
