@@ -414,3 +414,14 @@ var textListIndexAction = Action{
 		return []byte(l[p]), nil
 	},
 }
+
+var unescapeTextAction = Action{
+	Doc:          "Unescape \\n and \\t from input",
+	Names:        []string{"unescape"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Func: func(a *Action, in any) (any, error) {
+		return []byte(strings.ReplaceAll(strings.ReplaceAll(string(in.([]byte)), "\\n", "\n"), "\\t", "\t")), nil
+	},
+}

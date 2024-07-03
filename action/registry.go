@@ -23,7 +23,7 @@ var all = []Action{
 	parseJSONDateStringAction, epochTimeAction,
 	estTimeAction, etTimeAction, utcTimeAction, isoTimeAction, timeEpochAction,
 	commaTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction,
-	textListFirstAction, textListLastAction, textListIndexAction,
+	textListFirstAction, textListLastAction, textListIndexAction, unescapeTextAction,
 }
 
 func DefaultRegistry() *ActionRegistry {
