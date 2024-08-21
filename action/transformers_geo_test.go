@@ -77,6 +77,13 @@ func TestAction_GeoTextTransform(t *testing.T) {
 			"France",
 			false,
 		},
+
+		{
+			"s2cover(5)",
+			`{"type":"Point","coordinates":[2.2,48.8]}`,
+			"47e4",
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.action, func(t *testing.T) {

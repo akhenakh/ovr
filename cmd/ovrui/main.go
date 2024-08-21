@@ -171,8 +171,8 @@ func (a *App) paramsView(act *action.Action) {
 	a.actionParams = make([]any, len(act.Parameters))
 
 	for i, p := range act.Parameters {
-		switch p {
-		case action.IntActionParameter:
+		switch p.ActionParameterType {
+		case action.IntParameter:
 			var val int32
 
 			if i == 0 {
@@ -187,6 +187,44 @@ func (a *App) paramsView(act *action.Action) {
 						Label(fmt.Sprintf("%s %d param int", act.Title(), i)).
 						OnChange(func() {
 							a.actionParams[i] = int(val)
+						}),
+				),
+			),
+				g.Label("ESC to quit, enter to validate"))
+		case action.FloatParameter:
+			var val float32
+
+			if i == 0 {
+				widgets = append(widgets, g.Custom(func() {
+					giu.SetKeyboardFocusHere()
+				}))
+			}
+
+			widgets = append(widgets, g.Row(
+				g.Style().SetFont(bigFont).To(
+					g.InputFloat(&val).
+						Label(fmt.Sprintf("%s %d param float", act.Title(), i)).
+						OnChange(func() {
+							a.actionParams[i] = float32(val)
+						}),
+				),
+			),
+				g.Label("ESC to quit, enter to validate"))
+		case action.StringParameter:
+			var val string
+
+			if i == 0 {
+				widgets = append(widgets, g.Custom(func() {
+					giu.SetKeyboardFocusHere()
+				}))
+			}
+
+			widgets = append(widgets, g.Row(
+				g.Style().SetFont(bigFont).To(
+					g.InputText(&val).
+						Label(fmt.Sprintf("%s %d param string", act.Title(), i)).
+						OnChange(func() {
+							a.actionParams[i] = val
 						}),
 				),
 			),

@@ -305,6 +305,38 @@ var commaTextListAction = Action{
 	},
 }
 
+var spaceTextListAction = Action{
+	Doc:          "Parse a text input as a list separated by whitespace",
+	Names:        []string{"space"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextListFormat,
+	Func: func(a *Action, in any) (any, error) {
+		l := strings.Fields(string(in.([]byte)))
+		if len(l) <= 1 {
+			return []string{}, errors.New("can't split using space")
+		}
+
+		return l, nil
+	},
+}
+
+var pipeTextListAction = Action{
+	Doc:          "Parse a text input as a list separated by |",
+	Names:        []string{"pipe"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextListFormat,
+	Func: func(a *Action, in any) (any, error) {
+		l := strings.Split(string(in.([]byte)), "|")
+		if len(l) <= 1 {
+			return []string{}, errors.New("can't split using |")
+		}
+
+		return l, nil
+	},
+}
+
 var jwtTextListAction = Action{
 	Doc:          "Parse a JWT and show the 3 JSON parts,",
 	Names:        []string{"jwt"},
@@ -363,7 +395,7 @@ var textListCharJoinAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextListFormat,
 	OutputFormat: TextFormat,
-	Parameters:   []ActionParameter{StringActionParameter},
+	Parameters:   []ActionParameter{{StringParameter, "a string to join"}},
 	Func: func(a *Action, in any) (any, error) {
 		l := in.([]string)
 
@@ -403,7 +435,7 @@ var textListIndexAction = Action{
 	Type:         TransformAction,
 	InputFormat:  TextListFormat,
 	OutputFormat: TextFormat,
-	Parameters:   []ActionParameter{IntActionParameter},
+	Parameters:   []ActionParameter{{IntParameter, "select the item at index"}},
 	Func: func(a *Action, in any) (any, error) {
 		l := in.([]string)
 		// first param is an int

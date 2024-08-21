@@ -17,7 +17,7 @@ import (
 
 var geoActions = []Action{
 	toGeoJSONAction, fromGeoJSONAction, fromWKTAction, toWKTAction, centroidAction, geojsonioAction,
-	countryAction,
+	countryAction, s2Action, h3Action,
 }
 
 func init() {
@@ -124,5 +124,34 @@ var countryAction = Action{
 			countries[i] = l.Name
 		}
 		return []byte(strings.Join(countries, ",")), nil
+	},
+}
+
+var s2Action = Action{
+	Doc:          "Output the s2 cover of a geometry",
+	Names:        []string{"s2cover"},
+	Type:         TransformAction,
+	InputFormat:  GeoFormat,
+	OutputFormat: TextFormat,
+	Parameters: []ActionParameter{
+		{IntParameter, "min level"},
+		{IntParameter, "max level"},
+		{IntParameter, "max cells"}},
+
+	Func: func(a *Action, in any) (any, error) {
+		return []byte(in.(geom.Geometry).Centroid().AsText()), nil
+	},
+}
+
+var h3Action = Action{
+	Doc:          "Output the h3 cover of a geometry",
+	Names:        []string{"h3cover"},
+	Type:         TransformAction,
+	InputFormat:  GeoFormat,
+	OutputFormat: TextFormat,
+	Parameters:   []ActionParameter{{IntParameter, "level of the cells"}},
+
+	Func: func(a *Action, in any) (any, error) {
+		return []byte(in.(geom.Geometry).Centroid().AsText()), nil
 	},
 }

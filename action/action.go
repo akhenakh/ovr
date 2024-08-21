@@ -13,12 +13,17 @@ const (
 	ParseAction
 )
 
-type ActionParameter int
+type ActionParameter struct {
+	ActionParameterType
+	Doc string
+}
+
+type ActionParameterType int
 
 const (
-	IntActionParameter ActionParameter = iota
-	FloatActionParameter
-	StringActionParameter
+	IntParameter ActionParameterType = iota
+	FloatParameter
+	StringParameter
 )
 
 type Action struct {
@@ -61,13 +66,13 @@ func (a *Action) Transform(in *Data) (*Data, error) {
 	}
 
 	for i, p := range a.Parameters {
-		switch p {
-		case IntActionParameter:
+		switch p.ActionParameterType {
+		case IntParameter:
 			_, ok := a.InputParameters[i].(int)
 			if !ok {
 				return nil, fmt.Errorf("parameter at position %d is not an integer %T", i, a.InputParameters[i])
 			}
-		case StringActionParameter:
+		case StringParameter:
 			_, ok := a.InputParameters[i].(string)
 			if !ok {
 				return nil, fmt.Errorf("parameter at position %d is not a string %T", i, a.InputParameters[i])

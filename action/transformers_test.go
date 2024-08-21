@@ -119,6 +119,8 @@ func TestAction_TextTextListTransform(t *testing.T) {
 	}{
 		{"comma", "hello", nil, nil, true},
 		{"comma", "a,b", nil, []string{"a", "b"}, false},
+		{"space", "a  b", nil, []string{"a", "b"}, false},
+		{"pipe", "a|b", nil, []string{"a", "b"}, false},
 		{
 			"jwt",
 			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlJvYmVydCIsImlhdCI6MTUxNjIzOTAyMn0.fiHN5qbwhxBjwxLKSXfDV4wkVeuNeV8URADmuiYYYQo",
