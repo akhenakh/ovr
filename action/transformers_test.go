@@ -235,6 +235,9 @@ func TestAction_TextTransform(t *testing.T) {
 		{action: "jsoncompact", in: `{
 			"engine_version":   "1.7"
 		  }`, want: `{"engine_version":"1.7"}`, wantErr: false},
+		{action: "jsonpretty", in: `{"engine_version":"1.7"}`, want: `{
+  "engine_version": "1.7"
+}`, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.action, func(t *testing.T) {

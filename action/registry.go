@@ -23,7 +23,7 @@ var all = []Action{
 	parseJSONDateStringAction, epochTimeAction,
 	estTimeAction, etTimeAction, utcTimeAction, isoTimeAction, timeEpochAction,
 	spaceTextListAction, pipeTextListAction,
-	commaTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction,
+	commaTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction, jsonPrettifyAction,
 	textListFirstAction, textListLastAction, textListIndexAction, unescapeTextAction,
 }
 
@@ -77,29 +77,41 @@ func (r *ActionRegistry) MustActionByName(format Format, name string) (action *A
 // ActionsForText returns a list of actions, prefix by search, all if search is empty
 // ordered alphabetically
 func (r *ActionRegistry) ActionsForText(search string) (actions []*Action) {
+	added := make(map[*Action]bool)
 	for k, a := range r.m {
 		if strings.HasPrefix(k, TextFormat.Prefix+",") {
-			actions = append(actions, a)
+			if !added[a] {
+				actions = append(actions, a)
+				added[a] = true
+			}
 		}
-
-		sort.Slice(actions, func(i, j int) bool { return actions[i].Names[0] < actions[j].Names[0] })
 	}
+	sort.Slice(actions, func(i, j int) bool { return actions[i].Names[0] < actions[j].Names[0] })
 	return
 }
 
 func (r *ActionRegistry) ActionsForData(data *Data) (actions []*Action) {
+	added := make(map[*Action]bool)
 	for k, a := range r.m {
+		isApplicable := false
+
+		// Action's input format matches the data's format
 		if strings.HasPrefix(k, data.Format.Prefix+",") {
-			actions = append(actions, a)
+			isApplicable = true
+		} else if data.Format == TextListFormat && a.InputFormat == TextFormat && a.OutputFormat == TextFormat {
+			// Special case: text-to-text actions can be applied to each item of a text list
+			isApplicable = true
 		}
 
-		// in case we have a textList we also want to apply text filter, that can output text
-		if data.Format == TextListFormat && a.InputFormat == TextFormat && a.OutputFormat == TextFormat {
-			actions = append(actions, a)
+		if isApplicable {
+			if !added[a] {
+				actions = append(actions, a)
+				added[a] = true
+			}
 		}
-
-		sort.Slice(actions, func(i, j int) bool { return actions[i].Names[0] < actions[j].Names[0] })
 	}
+
+	sort.Slice(actions, func(i, j int) bool { return actions[i].Names[0] < actions[j].Names[0] })
 
 	return
 }

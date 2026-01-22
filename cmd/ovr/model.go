@@ -18,6 +18,18 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+var (
+	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	cursorStyle         = focusedStyle
+	noStyle             = lipgloss.NewStyle()
+	helpStyle           = blurredStyle.Copy()
+	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+
+	focusedButton = focusedStyle.Copy().Render("[ Submit ]")
+	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
+)
+
 type model struct {
 	state         sessionState
 	width, height int
@@ -179,54 +191,59 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case msg.String() == "enter":
 			a, ok := m.list.SelectedItem().(*action.Action)
+			if !ok {
+				break
+			}
+
 			m.paramsInput = make([]textinput.Model, len(a.Parameters))
 
-			if ok {
-				if len(a.Parameters) > 0 {
-					for i, ap := range a.Parameters {
-						ti := textinput.New()
-						switch ap.ActionParameterType {
-						case action.IntParameter:
-							ti.Placeholder = ap.Doc
-							ti.CharLimit = 8
-							ti.Width = 20
-						case action.StringParameter:
-							ti.Placeholder = ap.Doc
-							ti.CharLimit = 256
-							ti.Width = 80
-						case action.FloatParameter:
-							ti.Placeholder = ap.Doc
-							ti.CharLimit = 16
-							ti.Width = 20
-						}
-
-						if i == 0 {
-							ti.Focus()
-						}
-						m.paramsInput[i] = ti
+			if len(a.Parameters) > 0 {
+				for i, ap := range a.Parameters {
+					ti := textinput.New()
+					switch ap.ActionParameterType {
+					case action.IntParameter:
+						ti.Placeholder = ap.Doc
+						ti.CharLimit = 8
+						ti.Width = 20
+					case action.StringParameter:
+						ti.Placeholder = ap.Doc
+						ti.CharLimit = 256
+						ti.Width = 80
+					case action.FloatParameter:
+						ti.Placeholder = ap.Doc
+						ti.CharLimit = 16
+						ti.Width = 20
 					}
-					m.state = paramState
 
-					return m, nil
+					if i == 0 {
+						ti.Focus()
+						ti.PromptStyle = focusedStyle
+						ti.TextStyle = focusedStyle
+					}
+					m.paramsInput[i] = ti
 				}
+				m.state = paramState
 
-				out, err := a.Transform(m.out)
-				if err != nil {
-					m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
-					return m, nil
-				}
-				m.list.Title = fmt.Sprintf("%s: %s", out.Format.Name, strings.TrimRight(out.String(), "\r\n"))
-				m.out = out
-
-				m.list.ResetFilter()
-
-				actions := m.r.ActionsForData(m.out)
-				items := make([]list.Item, len(actions))
-				for i := 0; i < len(actions); i++ {
-					items[i] = actions[i]
-				}
-				m.list.SetItems(items)
+				// Return textinput.Blink to ensure cursor blinks when entering the state
+				return m, textinput.Blink
 			}
+
+			out, err := a.Transform(m.out)
+			if err != nil {
+				m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
+				return m, nil
+			}
+			m.list.Title = fmt.Sprintf("%s: %s", out.Format.Name, strings.TrimRight(out.String(), "\r\n"))
+			m.out = out
+
+			m.list.ResetFilter()
+
+			actions := m.r.ActionsForData(m.out)
+			items := make([]list.Item, len(actions))
+			for i := 0; i < len(actions); i++ {
+				items[i] = actions[i]
+			}
+			m.list.SetItems(items)
 		}
 	}
 
@@ -239,11 +256,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func updateParams(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
-	var (
-		focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-		noStyle      = lipgloss.NewStyle()
-	)
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -270,6 +282,7 @@ func updateParams(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			// If so, exit the view and try apply the values.
 			if s == "enter" && m.focusIndex == len(m.paramsInput) {
 				a, _ := m.list.SelectedItem().(*action.Action)
+				a.InputParameters = nil // Clear previous parameters
 				m.state = mainListState
 
 				for i, ap := range a.Parameters {
@@ -296,6 +309,24 @@ func updateParams(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 						a.InputParameters = append(a.InputParameters, m.paramsInput[i].Value())
 					}
 				}
+
+				out, err := a.Transform(m.out)
+				if err != nil {
+					m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
+					return m, nil
+				}
+				m.list.Title = fmt.Sprintf("%s: %s", out.Format.Name, strings.TrimRight(out.String(), "\r\n"))
+				m.out = out
+
+				m.list.ResetFilter()
+
+				actions := m.r.ActionsForData(m.out)
+				items := make([]list.Item, len(actions))
+				for i := 0; i < len(actions); i++ {
+					items[i] = actions[i]
+				}
+				m.list.SetItems(items)
+
 				return m, nil
 			}
 
@@ -384,17 +415,6 @@ func (m model) View() string {
 	case detailState:
 		return fmt.Sprintf("%s\n%s\n%s", m.headerView(), m.viewport.View(), m.footerView())
 	case paramState:
-		var (
-			focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-			blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-
-			helpStyle           = blurredStyle.Copy()
-			cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
-
-			focusedButton = focusedStyle.Copy().Render("[ Submit ]")
-			blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
-		)
-
 		var b strings.Builder
 
 		a, _ := m.list.SelectedItem().(*action.Action)
@@ -402,9 +422,11 @@ func (m model) View() string {
 		fmt.Fprintf(&b, "Parameters for %s\n\n", a.Names[0])
 
 		for i := range m.paramsInput {
+			b.WriteString(a.Parameters[i].Doc)
+			b.WriteRune('\n')
 			b.WriteString(m.paramsInput[i].View())
 			if i < len(m.paramsInput)-1 {
-				b.WriteRune('\n')
+				b.WriteString("\n\n")
 			}
 		}
 

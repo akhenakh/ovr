@@ -182,6 +182,21 @@ var jsonCompactAction = Action{
 	},
 }
 
+var jsonPrettifyAction = Action{
+	Doc:          "Reformat/prettify JSON from input",
+	Names:        []string{"jsonpretty", "unminify", "reformat"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Func: func(a *Action, in any) (any, error) {
+		dst := &bytes.Buffer{}
+		if err := json.Indent(dst, in.([]byte), "", "  "); err != nil {
+			return nil, err
+		}
+		return dst.Bytes(), nil
+	},
+}
+
 var toBase64StringAction = Action{
 	Doc:          "Returns the base64 encoding of input",
 	Names:        []string{"tobase64"},
