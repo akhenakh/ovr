@@ -58,9 +58,10 @@ const defaultStatusMsg = "ESC quit, v view, / search"
 func newApp(in []byte) *App {
 	out := action.NewDataText(in)
 
-	bigFont = g.Context.FontAtlas.AddFontFromBytes("iosevskanerdfont.ttf", bigFontBytes, 20)
+	bigFont = g.Context.FontAtlas.AddFontFromBytes("iosevskanerdfont.ttf", bigFontBytes)
 
-	g.Context.FontAtlas.SetDefaultFontFromBytes(bigFontBytes, 15)
+	g.Context.FontAtlas.SetDefaultFontFromBytes(bigFontBytes)
+	g.Context.FontAtlas.SetDefaultFontSize(15)
 
 	statusMsg := defaultStatusMsg
 
@@ -162,7 +163,7 @@ func (a *App) editorView(statusMsg string) {
 	}
 }
 
-// editorView displays the full window editor
+// paramsView displays the form for action parameters
 func (a *App) paramsView(act *action.Action) {
 	a.state = paramsState
 
@@ -170,67 +171,67 @@ func (a *App) paramsView(act *action.Action) {
 
 	a.actionParams = make([]any, len(act.Parameters))
 
+	shouldFocus := true
+
 	for i, p := range act.Parameters {
+		i := i
+		p := p
+
+		if i == 0 {
+			widgets = append(widgets, g.Custom(func() {
+				if shouldFocus {
+					giu.SetKeyboardFocusHere()
+					shouldFocus = false
+				}
+			}))
+		}
+
+		label := fmt.Sprintf("%s##param%d", p.Doc, i)
+
 		switch p.ActionParameterType {
 		case action.IntParameter:
 			var val int32
-
-			if i == 0 {
-				widgets = append(widgets, g.Custom(func() {
-					giu.SetKeyboardFocusHere()
-				}))
-			}
+			a.actionParams[i] = int(val)
 
 			widgets = append(widgets, g.Row(
-				g.Style().SetFont(bigFont).To(
+				g.Style().SetFont(bigFont).SetFontSize(20).To(
 					g.InputInt(&val).
-						Label(fmt.Sprintf("%s %d param int", act.Title(), i)).
+						Label(label).
 						OnChange(func() {
 							a.actionParams[i] = int(val)
 						}),
 				),
-			),
-				g.Label("ESC to quit, enter to validate"))
+			))
 		case action.FloatParameter:
 			var val float32
-
-			if i == 0 {
-				widgets = append(widgets, g.Custom(func() {
-					giu.SetKeyboardFocusHere()
-				}))
-			}
+			a.actionParams[i] = float64(val)
 
 			widgets = append(widgets, g.Row(
-				g.Style().SetFont(bigFont).To(
+				g.Style().SetFont(bigFont).SetFontSize(20).To(
 					g.InputFloat(&val).
-						Label(fmt.Sprintf("%s %d param float", act.Title(), i)).
+						Label(label).
 						OnChange(func() {
-							a.actionParams[i] = float32(val)
+							a.actionParams[i] = float64(val)
 						}),
 				),
-			),
-				g.Label("ESC to quit, enter to validate"))
+			))
 		case action.StringParameter:
 			var val string
-
-			if i == 0 {
-				widgets = append(widgets, g.Custom(func() {
-					giu.SetKeyboardFocusHere()
-				}))
-			}
+			a.actionParams[i] = val
 
 			widgets = append(widgets, g.Row(
-				g.Style().SetFont(bigFont).To(
+				g.Style().SetFont(bigFont).SetFontSize(20).To(
 					g.InputText(&val).
-						Label(fmt.Sprintf("%s %d param string", act.Title(), i)).
+						Label(label).
 						OnChange(func() {
 							a.actionParams[i] = val
 						}),
 				),
-			),
-				g.Label("ESC to quit, enter to validate"))
+			))
 		}
 	}
+
+	widgets = append(widgets, g.Label("ESC to quit, enter to validate"))
 
 	a.visibleWidgets = widgets
 }
@@ -284,7 +285,7 @@ func (a *App) listBox(filter string) g.Widget {
 		a.defaultView("Applied " + act.Title())
 	})
 
-	return g.Style().SetFont(bigFont).To(listBox)
+	return g.Style().SetFont(bigFont).SetFontSize(20).To(listBox)
 }
 
 func (a *App) loop() {
@@ -311,51 +312,68 @@ func (a *App) loop() {
 
 		// enter command
 		giu.WindowShortcut{Key: giu.KeyEnter, Callback: func() {
-			act := a.actionsList[a.selectedIndex]
-			if act == nil {
-				a.defaultView("Error can't find this action")
+			// If we are in params state, we are validating the action
+			if a.state == paramsState {
+				// Retrieve current selected action (it hasn't changed since we entered params state from home/search)
+				// Note: this assumes selectedIndex is still valid for the actionsList which should be the case.
+				// However, actionsList depends on filtering.
+				// For safety, we should probably store the 'currentAction' in App struct when entering paramsView.
+				// But let's assume filtering didn't change.
+				// Wait, if we came from search, actionsList is filtered.
+				// If we assume the user didn't change search/selection (which they shouldn't have in params view),
+				// then a.selectedIndex should point to the right action in a.actionsList.
+				// BUT: To be safe, let's rely on the fact that paramsView was triggered by an action.
+				// The clean way would be to store 'pendingAction' in App.
+				// For now, let's look at how we got here.
+				// We can just rely on the selection.
+				if a.selectedIndex >= 0 && int(a.selectedIndex) < a.actionsList.Len() {
+					act := a.actionsList[a.selectedIndex]
 
+					if len(a.actionParams) != len(act.Parameters) {
+						a.defaultView("Error incorrect number of parameters")
+						return
+					}
+
+					act.InputParameters = a.actionParams
+
+					out, err := act.Transform(a.out)
+					if err != nil {
+						a.defaultView("Error " + err.Error())
+						return
+					}
+					a.out = out
+
+					a.defaultView("Applied " + act.Title())
+				}
 				return
 			}
 
+			// Home or Search State
 			if a.state == homeState || a.state == searchState {
-				a.searchInput = ""
+				if a.selectedIndex >= 0 && int(a.selectedIndex) < a.actionsList.Len() {
+					act := a.actionsList[a.selectedIndex]
+					if act == nil {
+						a.defaultView("Error can't find this action")
+						return
+					}
 
-				// This action has parameters, we need the ui to ask for those
-				if len(act.Parameters) > 0 {
-					a.paramsView(act)
+					a.searchInput = ""
 
-					return
+					// This action has parameters, we need the ui to ask for those
+					if len(act.Parameters) > 0 {
+						a.paramsView(act)
+						return
+					}
+
+					out, err := act.Transform(a.out)
+					if err != nil {
+						a.defaultView("Error " + err.Error())
+						return
+					}
+					a.out = out
+
+					a.defaultView("Applied " + act.Title())
 				}
-
-				out, err := act.Transform(a.out)
-				if err != nil {
-					a.defaultView("Error " + err.Error())
-
-					return
-				}
-				a.out = out
-
-				a.defaultView("Applied " + act.Title())
-			} else if a.state == paramsState {
-				if len(a.actionParams) != len(act.Parameters) {
-					a.defaultView("Error incorrect number of parameters")
-
-					return
-				}
-
-				act.InputParameters = a.actionParams
-
-				out, err := act.Transform(a.out)
-				if err != nil {
-					a.defaultView("Error " + err.Error())
-
-					return
-				}
-				a.out = out
-
-				a.defaultView("Applied " + act.Title())
-
 			}
 		}},
 
