@@ -96,6 +96,7 @@ type model struct {
 	viewport      viewport.Model
 	paramsInput   []textinput.Model
 	mapView       *tiletea.GeomView
+	clearImages   bool
 	keys          *listKeyMap
 	delegateKeys  *delegateKeyMap
 	in            []byte
@@ -212,6 +213,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height - v
 
 	case tea.KeyPressMsg:
+		// returning from the map emitted image deletions, stop now that
+		// the terminal processed one
+		m.clearImages = false
+
 		// Don't match any of the keys below if we're actively filtering.
 		if m.list.FilterState() == list.Filtering {
 			break
@@ -495,6 +500,9 @@ func updateMap(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 		if k := msg.String(); k == "esc" || k == "q" {
 			m.state = mainListState
 			m.mapView = nil
+			// Kitty graphics placements persist until explicitly deleted,
+			// clear them on the next rendered frames
+			m.clearImages = true
 			return m, nil
 		}
 	}
@@ -557,6 +565,13 @@ func (m model) View() tea.View {
 
 	default:
 		content = appStyle.Render(m.list.View())
+		if m.clearImages {
+			// Kitty graphics placements persist until explicitly deleted.
+			// The sequence must be at the very end of the content: the
+			// renderer attaches escape sequences to the last pending cell,
+			// any sequence followed by printable content is dropped.
+			content += "\x1b_Ga=d\x1b\\"
+		}
 	}
 
 	v := tea.NewView(content)
