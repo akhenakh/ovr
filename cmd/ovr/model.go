@@ -14,7 +14,10 @@ import (
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+
 	"github.com/akhenakh/ovr/action"
+	"github.com/akhenakh/tiletea"
+	"github.com/peterstace/simplefeatures/geom"
 )
 
 var (
@@ -90,6 +93,7 @@ type model struct {
 	list          list.Model
 	viewport      viewport.Model
 	paramsInput   []textinput.Model
+	mapView       *tiletea.GeomView
 	keys          *listKeyMap
 	delegateKeys  *delegateKeyMap
 	in            []byte
@@ -103,6 +107,7 @@ const (
 	mainListState sessionState = iota
 	detailState
 	paramState
+	mapState
 )
 
 var infoStyle = func() lipgloss.Style {
@@ -167,6 +172,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if m.state == paramState {
 		return updateParams(msg, m)
+	}
+
+	if m.state == mapState {
+		return updateMap(msg, m)
 	}
 
 	// Make sure these keys always quit
@@ -243,6 +252,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a, ok := m.list.SelectedItem().(action.Action)
 			if !ok {
 				break
+			}
+
+			if a.Interactive() {
+				g, ok := m.out.Value.(geom.Geometry)
+				if !ok {
+					m.list.NewStatusMessage(errorMessageStyle("Error current data is not a geometry"))
+					return m, nil
+				}
+
+				m.mapView = tiletea.NewGeomViewFromGeometry(g)
+				m.state = mapState
+				return m, m.mapView.Init()
 			}
 
 			m.paramsInput = make([]textinput.Model, len(a.Parameters()))
@@ -440,6 +461,22 @@ func updateDetail(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+func updateMap(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyPressMsg:
+		// come back from the map view
+		if k := msg.String(); k == "esc" || k == "q" {
+			m.state = mainListState
+			m.mapView = nil
+			return m, nil
+		}
+	}
+
+	newMapView, cmd := m.mapView.Update(msg)
+	m.mapView = newMapView.(*tiletea.GeomView)
+	return m, cmd
+}
+
 // headerView for detailView
 func (m model) headerView() string {
 	title := titleStyle.Render("Text:")
@@ -455,6 +492,10 @@ func (m model) footerView() string {
 }
 
 func (m model) View() tea.View {
+	if m.state == mapState {
+		return m.mapView.View()
+	}
+
 	var content string
 
 	switch m.state {

@@ -63,6 +63,7 @@ go build -tags geo -o ovr ./cmd/ovr
 - [ ] duration add substract
 - [X] escape unescape
 - [ ] reformat input, prettifie
+- [X] JSON prettify
 - [X] JWT decode
 - [ ] JWT Validate
 - [ ] known payloads (AWS...), logs severity, golang stack, java stack...
@@ -76,6 +77,8 @@ go build -tags geo -o ovr ./cmd/ovr
 - [ ] Colors, RGBtoHex, js names to colors
 - [X] WKB/WKT/GeoJSON (geometry)
 - [X] Geometry: area, centroid, timezone, 
+- [X] s2/h3 cell covers
+- [X] Interactive map view of geometries (tiletea, Kitty graphics protocol)
 - [ ] Skip entries
 - [ ] to qrcode
 - [ ] ip address

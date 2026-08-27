@@ -53,6 +53,7 @@ type Definition[I, O any] struct {
 	InputFormat  Format
 	OutputFormat Format
 	Parameters   []ActionParameter
+	Interactive  bool
 	Func         Func[I, O]
 }
 
@@ -65,6 +66,7 @@ type Action interface {
 	OutputFormat() Format
 	Parameters() []ActionParameter
 	InputParameters() []any
+	Interactive() bool
 
 	SetInputParameters(values ...any) error
 
@@ -101,6 +103,7 @@ func (e *erased[I, O]) InputFormat() Format           { return e.def.InputFormat
 func (e *erased[I, O]) OutputFormat() Format          { return e.def.OutputFormat }
 func (e *erased[I, O]) Parameters() []ActionParameter { return e.def.Parameters }
 func (e *erased[I, O]) InputParameters() []any        { return e.params }
+func (e *erased[I, O]) Interactive() bool             { return e.def.Interactive }
 
 func (e *erased[I, O]) clone() Action {
 	c := *e

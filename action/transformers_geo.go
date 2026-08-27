@@ -19,7 +19,7 @@ import (
 
 var geoActions = []Action{
 	toGeoJSONAction, fromGeoJSONAction, fromWKTAction, toWKTAction, centroidAction, geojsonioAction,
-	countryAction, s2Action, h3Action,
+	countryAction, s2Action, h3Action, mapAction,
 }
 
 func init() {
@@ -172,6 +172,19 @@ var h3Action = New(Definition[geom.Geometry, []byte]{
 		}
 
 		return []byte(strings.Join(tokens, ",")), nil
+	},
+})
+
+var mapAction = New(Definition[geom.Geometry, geom.Geometry]{
+	Doc:          "Display the geometry on an interactive terminal map",
+	Names:        []string{"map"},
+	Type:         TransformAction,
+	InputFormat:  GeoFormat,
+	OutputFormat: GeoFormat,
+	Interactive:  true,
+
+	Func: func(a Action, in geom.Geometry) (geom.Geometry, error) {
+		return in, nil
 	},
 })
 
