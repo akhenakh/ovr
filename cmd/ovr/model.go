@@ -89,6 +89,8 @@ func newListKeyMap() *listKeyMap {
 type model struct {
 	state         sessionState
 	width, height int
+	termWidth     int
+	termHeight    int
 	r             *action.ActionRegistry
 	list          list.Model
 	viewport      viewport.Model
@@ -188,6 +190,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
+		m.termWidth = msg.Width
+		m.termHeight = msg.Height
 		h, v := appStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
 		m.width = msg.Width - h
@@ -261,9 +265,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 
-				m.mapView = tiletea.NewGeomViewFromGeometry(g)
+				gv := tiletea.NewGeomViewFromGeometry(g)
+				m.mapView = gv
 				m.state = mapState
-				return m, m.mapView.Init()
+
+				// The map only renders once it knows the terminal size and
+				// the initial WindowSizeMsg was sent before it existed.
+				if m.termWidth > 0 && m.termHeight > 0 {
+					newMapView, cmd := gv.Update(tea.WindowSizeMsg{Width: m.termWidth, Height: m.termHeight})
+					m.mapView = newMapView.(*tiletea.GeomView)
+					return m, cmd
+				}
+				return m, gv.Init()
 			}
 
 			m.paramsInput = make([]textinput.Model, len(a.Parameters()))
