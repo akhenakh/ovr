@@ -73,6 +73,7 @@ type Action interface {
 	Transform(in *Data) (*Data, error)
 
 	Title() string
+	Description() string
 	FullDescription() string
 	FilterValue() string
 
@@ -184,6 +185,10 @@ func (e *erased[I, O]) Title() string {
 
 func (e *erased[I, O]) FullDescription() string {
 	return e.Title() + ": " + e.def.Doc
+}
+
+func (e *erased[I, O]) Description() string {
+	return e.def.Doc
 }
 
 func (e *erased[I, O]) FilterValue() string {
