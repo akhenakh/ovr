@@ -18,6 +18,6 @@ ovrui
 cmd/ovrui/ovrui
 # debug logs and local binaries
 debug.log
-ovr
-ovrui
+/ovr
+/ovrui
 cmd/ovrui/ovrui

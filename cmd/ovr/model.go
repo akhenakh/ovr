@@ -8,57 +8,107 @@ import (
 	"strconv"
 	"strings"
 
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/list"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/akhenakh/ovr/action"
-	"github.com/charmbracelet/bubbles/cursor"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 var (
-	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	cursorStyle         = focusedStyle
-	noStyle             = lipgloss.NewStyle()
-	helpStyle           = blurredStyle.Copy()
-	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+	appStyle = lipgloss.NewStyle().Padding(1, 2)
 
-	focusedButton = focusedStyle.Copy().Render("[ Submit ]")
+	titleStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#FFFDF5")).
+			Background(lipgloss.Color("#25A065")).
+			Padding(0, 1)
+
+	statusMessageStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#04B575")).
+				Render
+	errorMessageStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#FF1111")).
+				Render
+
+	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	helpStyle    = blurredStyle
+
+	focusedButton = focusedStyle.Render("[ Submit ]")
 	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
 )
+
+type listKeyMap struct {
+	toggleTitleBar   key.Binding
+	toggleStatusBar  key.Binding
+	togglePagination key.Binding
+	toggleHelpMenu   key.Binding
+	removeAction     key.Binding
+	showDetails      key.Binding
+	openEditor       key.Binding
+}
+
+func newListKeyMap() *listKeyMap {
+	return &listKeyMap{
+		toggleTitleBar: key.NewBinding(
+			key.WithKeys("T"),
+			key.WithHelp("T", "toggle title"),
+		),
+		toggleStatusBar: key.NewBinding(
+			key.WithKeys("S"),
+			key.WithHelp("S", "toggle status"),
+		),
+		togglePagination: key.NewBinding(
+			key.WithKeys("P"),
+			key.WithHelp("P", "toggle pagination"),
+		),
+		toggleHelpMenu: key.NewBinding(
+			key.WithKeys("H"),
+			key.WithHelp("H", "toggle help"),
+		),
+		showDetails: key.NewBinding(
+			key.WithKeys("v", "V"),
+			key.WithHelp("v", "show details view"),
+		),
+		removeAction: key.NewBinding(
+			key.WithKeys("backspace", "d"),
+			key.WithHelp("backspace", "undo last action"),
+		),
+		openEditor: key.NewBinding(
+			key.WithKeys("e", "E"),
+			key.WithHelp("e", "open editor"),
+		),
+	}
+}
 
 type model struct {
 	state         sessionState
 	width, height int
-	r             *action.ActionRegistry // items for the search list
+	r             *action.ActionRegistry
 	list          list.Model
-	viewport      viewport.Model // details view
+	viewport      viewport.Model
 	paramsInput   []textinput.Model
 	keys          *listKeyMap
 	delegateKeys  *delegateKeyMap
 	in            []byte
 	out           *action.Data
-
-	// for the text input view
-	cursorMode cursor.Mode
-	focusIndex int
+	focusIndex    int
 }
 
 type sessionState int
 
 const (
-	mainListState sessionState = iota // the default view with list of applicable actions
-	detailState                       // the detail view, that could change based on the type of current data
-	paramState                        // displayed when a parameter is needed to execute the action
+	mainListState sessionState = iota
+	detailState
+	paramState
 )
 
 var infoStyle = func() lipgloss.Style {
 	b := lipgloss.RoundedBorder()
 	b.Left = "┤"
-	return titleStyle.Copy().BorderStyle(b)
+	return titleStyle.BorderStyle(b)
 }()
 
 func newModel(in []byte) model {
@@ -105,7 +155,7 @@ func newModel(in []byte) model {
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.EnterAltScreen
+	return nil
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -120,7 +170,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Make sure these keys always quit
-	if msg, ok := msg.(tea.KeyMsg); ok {
+	if msg, ok := msg.(tea.KeyPressMsg); ok {
 		k := msg.String()
 		if k == "q" || k == "esc" || k == "ctrl+c" {
 			return m, tea.Quit
@@ -134,7 +184,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width - h
 		m.height = msg.Height - v
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		// Don't match any of the keys below if we're actively filtering.
 		if m.list.FilterState() == list.Filtering {
 			break
@@ -200,32 +250,28 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if len(a.Parameters()) > 0 {
 				for i, ap := range a.Parameters() {
 					ti := textinput.New()
+					ti.Placeholder = ap.Doc
 					switch ap.ActionParameterType {
 					case action.IntParameter:
-						ti.Placeholder = ap.Doc
 						ti.CharLimit = 8
-						ti.Width = 20
-					case action.StringParameter:
-						ti.Placeholder = ap.Doc
-						ti.CharLimit = 256
-						ti.Width = 80
 					case action.FloatParameter:
-						ti.Placeholder = ap.Doc
 						ti.CharLimit = 16
-						ti.Width = 20
+					case action.StringParameter:
+						ti.CharLimit = 256
 					}
 
 					if i == 0 {
-						ti.Focus()
-						ti.PromptStyle = focusedStyle
-						ti.TextStyle = focusedStyle
+						ti.Prompt = "▸ "
+						cmd := ti.Focus()
+						cmds = append(cmds, cmd)
+					} else {
+						ti.Prompt = "  "
 					}
 					m.paramsInput[i] = ti
 				}
 				m.state = paramState
 
-				// Return textinput.Blink to ensure cursor blinks when entering the state
-				return m, textinput.Blink
+				return m, tea.Batch(cmds...)
 			}
 
 			out, err := a.Transform(m.out)
@@ -256,23 +302,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func updateParams(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
-		case "ctrl+c", "esc":
+		case "ctrl+c":
 			return m, tea.Quit
 
-		// Change cursor mode
-		case "ctrl+r":
-			m.cursorMode++
-			if m.cursorMode > cursor.CursorHide {
-				m.cursorMode = cursor.CursorBlink
-			}
-			cmds := make([]tea.Cmd, len(m.paramsInput))
-			for i := range m.paramsInput {
-				cmds[i] = m.paramsInput[i].Cursor.SetMode(m.cursorMode)
-			}
-			return m, tea.Batch(cmds...)
+		case "esc":
+			m.state = mainListState
+			return m, nil
 
 		// Set focus to next input
 		case "tab", "shift+tab", "enter", "up", "down":
@@ -348,19 +388,17 @@ func updateParams(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 				m.focusIndex = len(m.paramsInput)
 			}
 
-			cmds := make([]tea.Cmd, len(m.paramsInput))
+			cmds = make([]tea.Cmd, len(m.paramsInput))
 			for i := 0; i <= len(m.paramsInput)-1; i++ {
 				if i == m.focusIndex {
 					// Set focused state
+					m.paramsInput[i].Prompt = "▸ "
 					cmds[i] = m.paramsInput[i].Focus()
-					m.paramsInput[i].PromptStyle = focusedStyle
-					m.paramsInput[i].TextStyle = focusedStyle
 					continue
 				}
 				// Remove focused state
+				m.paramsInput[i].Prompt = "  "
 				m.paramsInput[i].Blur()
-				m.paramsInput[i].PromptStyle = noStyle
-				m.paramsInput[i].TextStyle = noStyle
 			}
 
 			return m, tea.Batch(cmds...)
@@ -368,7 +406,7 @@ func updateParams(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 	}
 
 	// Handle character input and blinking
-	cmds := make([]tea.Cmd, len(m.paramsInput))
+	cmds = make([]tea.Cmd, len(m.paramsInput))
 
 	// Only text paramsInput with Focus() set will respond, so it's safe to simply
 	// update all of them here without any further logic.
@@ -386,39 +424,42 @@ func updateDetail(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 		footerHeight := lipgloss.Height(m.footerView())
 		verticalMarginHeight := headerHeight + footerHeight
 
-		m.viewport.Width = m.width
-		m.viewport.Height = m.height - verticalMarginHeight
+		m.viewport.SetWidth(m.width)
+		m.viewport.SetHeight(m.height - verticalMarginHeight)
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		// come back from detail view
-		if k := msg.String(); (k == "ctrl+c" || k == "q" || k == "esc") && m.state == detailState {
+		if k := msg.String(); k == "ctrl+c" || k == "q" || k == "esc" {
 			m.state = mainListState
 			return m, nil
 		}
 	}
 
-	_, cmd := m.viewport.Update(msg)
+	newViewport, cmd := m.viewport.Update(msg)
+	m.viewport = newViewport
 	return m, cmd
 }
 
 // headerView for detailView
 func (m model) headerView() string {
 	title := titleStyle.Render("Text:")
-	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(title)))
+	line := strings.Repeat("─", max(0, m.viewport.Width()-lipgloss.Width(title)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
 }
 
 // footerView for detailView
 func (m model) footerView() string {
 	info := infoStyle.Render(fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*100))
-	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(info)))
+	line := strings.Repeat("─", max(0, m.viewport.Width()-lipgloss.Width(info)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, line, info)
 }
 
-func (m model) View() string {
+func (m model) View() tea.View {
+	var content string
+
 	switch m.state {
 	case detailState:
-		return fmt.Sprintf("%s\n%s\n%s", m.headerView(), m.viewport.View(), m.footerView())
+		content = fmt.Sprintf("%s\n%s\n%s", m.headerView(), m.viewport.View(), m.footerView())
 	case paramState:
 		var b strings.Builder
 
@@ -435,22 +476,25 @@ func (m model) View() string {
 			}
 		}
 
-		button := &blurredButton
+		button := blurredButton
 		if m.focusIndex == len(m.paramsInput) {
-			button = &focusedButton
+			button = focusedButton
 		}
 
-		fmt.Fprintf(&b, "\n\n%s\n\n", *button)
+		fmt.Fprintf(&b, "\n\n%s\n\n", button)
 
-		b.WriteString(helpStyle.Render("cursor mode is "))
-		b.WriteString(cursorModeHelpStyle.Render(m.cursorMode.String()))
-		b.WriteString(helpStyle.Render(" (ctrl+r to change style)"))
+		b.WriteString(helpStyle.Render("tab to cycle, enter to submit, esc to cancel"))
 
-		return b.String()
+		content = b.String()
 
 	default:
-		return appStyle.Render(m.list.View())
+		content = appStyle.Render(m.list.View())
 	}
+
+	v := tea.NewView(content)
+	v.AltScreen = true
+	v.MouseMode = tea.MouseModeCellMotion
+	return v
 }
 
 type editorFinishedMsg struct{ err error }

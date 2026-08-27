@@ -1,10 +1,10 @@
 package main
 
 import (
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/list"
+	tea "charm.land/bubbletea/v2"
 	"github.com/akhenakh/ovr/action"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
-	tea "github.com/charmbracelet/bubbletea"
 )
 
 func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
@@ -20,7 +20,7 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 		}
 
 		switch msg := msg.(type) {
-		case tea.KeyMsg:
+		case tea.KeyPressMsg:
 			switch {
 			case key.Matches(msg, keys.choose):
 				return m.NewStatusMessage(statusMessageStyle("Applying " + title))

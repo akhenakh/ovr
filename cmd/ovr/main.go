@@ -6,70 +6,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
 	"golang.design/x/clipboard"
 )
-
-var (
-	appStyle = lipgloss.NewStyle().Padding(1, 2)
-
-	titleStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFFDF5")).
-			Background(lipgloss.Color("#25A065")).
-			Padding(0, 1)
-
-	statusMessageStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.AdaptiveColor{Light: "#04B575", Dark: "#04B575"}).
-				Render
-	errorMessageStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.AdaptiveColor{Light: "#FF1111", Dark: "#FF1111"}).
-				Render
-)
-
-type listKeyMap struct {
-	toggleTitleBar   key.Binding
-	toggleStatusBar  key.Binding
-	togglePagination key.Binding
-	toggleHelpMenu   key.Binding
-	removeAction     key.Binding
-	showDetails      key.Binding
-	openEditor       key.Binding
-}
-
-func newListKeyMap() *listKeyMap {
-	return &listKeyMap{
-		toggleTitleBar: key.NewBinding(
-			key.WithKeys("T"),
-			key.WithHelp("T", "toggle title"),
-		),
-		toggleStatusBar: key.NewBinding(
-			key.WithKeys("S"),
-			key.WithHelp("S", "toggle status"),
-		),
-		togglePagination: key.NewBinding(
-			key.WithKeys("P"),
-			key.WithHelp("P", "toggle pagination"),
-		),
-		toggleHelpMenu: key.NewBinding(
-			key.WithKeys("H"),
-			key.WithHelp("H", "toggle help"),
-		),
-		showDetails: key.NewBinding(
-			key.WithKeys("v", "V"),
-			key.WithHelp("v", "show details view"),
-		),
-		removeAction: key.NewBinding(
-			key.WithKeys("backspace", "d"),
-			key.WithHelp("backspace", "undo last action"),
-		),
-		openEditor: key.NewBinding(
-			key.WithKeys("e", "E"),
-			key.WithHelp("e", "open editor"),
-		),
-	}
-}
 
 func main() {
 	readStdin := flag.Bool("s", false, "Use Stdin as input data (conflicts with TUI interaction if piped directly)")
@@ -112,12 +51,7 @@ func main() {
 		input = clipboard.Read(clipboard.FmtText)
 	}
 
-	// Important: We strictly use NewProgram. If 'ovr' was invoked with a file input (-i),
-	// stdin remains attached to the terminal, allowing the TUI to work.
-	p := tea.NewProgram(
-		newModel(input),
-		tea.WithMouseCellMotion(),
-	)
+	p := tea.NewProgram(newModel(input))
 
 	m, err := p.Run()
 	if err != nil {
