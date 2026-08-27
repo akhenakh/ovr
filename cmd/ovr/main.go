@@ -5,15 +5,11 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"golang.design/x/clipboard"
-
-	"github.com/akhenakh/ovr/action"
 )
 
 var (
@@ -38,6 +34,8 @@ type listKeyMap struct {
 	togglePagination key.Binding
 	toggleHelpMenu   key.Binding
 	removeAction     key.Binding
+	showDetails      key.Binding
+	openEditor       key.Binding
 }
 
 func newListKeyMap() *listKeyMap {
@@ -58,160 +56,26 @@ func newListKeyMap() *listKeyMap {
 			key.WithKeys("H"),
 			key.WithHelp("H", "toggle help"),
 		),
+		showDetails: key.NewBinding(
+			key.WithKeys("v", "V"),
+			key.WithHelp("v", "show details view"),
+		),
 		removeAction: key.NewBinding(
 			key.WithKeys("backspace", "d"),
 			key.WithHelp("backspace", "undo last action"),
 		),
+		openEditor: key.NewBinding(
+			key.WithKeys("e", "E"),
+			key.WithHelp("e", "open editor"),
+		),
 	}
-}
-
-type model struct {
-	r            *action.ActionRegistry // items on the to-do list
-	list         list.Model
-	keys         *listKeyMap
-	delegateKeys *delegateKeyMap
-	in           []byte
-	out          *action.Data
-}
-
-func newModel(in []byte) model {
-	var (
-		r            = action.DefaultRegistry()
-		delegateKeys = newDelegateKeyMap()
-		listKeys     = newListKeyMap()
-	)
-
-	// Make initial list of items
-	actions := r.ActionsForText("")
-	items := make([]list.Item, len(actions))
-	for i := 0; i < len(actions); i++ {
-		items[i] = actions[i]
-	}
-
-	// Setup list
-	delegate := newItemDelegate(delegateKeys)
-	actionList := list.New(items, delegate, 0, 0)
-	actionList.Title = fmt.Sprintf("Text Input: %s", strings.TrimRight(string(in), "\r\n"))
-	actionList.Styles.Title = titleStyle
-	actionList.SetShowStatusBar(false)
-	actionList.AdditionalFullHelpKeys = func() []key.Binding {
-		return []key.Binding{
-			listKeys.toggleTitleBar,
-			listKeys.toggleStatusBar,
-			listKeys.togglePagination,
-			listKeys.toggleHelpMenu,
-			listKeys.removeAction,
-		}
-	}
-
-	return model{
-		r:            r,
-		list:         actionList,
-		keys:         listKeys,
-		delegateKeys: delegateKeys,
-		in:           in,
-		out:          action.NewDataText(in),
-	}
-}
-
-func (m model) Init() tea.Cmd {
-	return tea.EnterAltScreen
-}
-
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		h, v := appStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v)
-
-	case tea.KeyMsg:
-		// Don't match any of the keys below if we're actively filtering.
-		if m.list.FilterState() == list.Filtering {
-			break
-		}
-
-		switch {
-
-		case key.Matches(msg, m.keys.toggleTitleBar):
-			v := !m.list.ShowTitle()
-			m.list.SetShowTitle(v)
-			m.list.SetShowFilter(v)
-			m.list.SetFilteringEnabled(v)
-			return m, nil
-
-		case key.Matches(msg, m.keys.toggleStatusBar):
-			m.list.SetShowStatusBar(!m.list.ShowStatusBar())
-			return m, nil
-
-		case key.Matches(msg, m.keys.togglePagination):
-			m.list.SetShowPagination(!m.list.ShowPagination())
-			return m, nil
-
-		case key.Matches(msg, m.keys.toggleHelpMenu):
-			m.list.SetShowHelp(!m.list.ShowHelp())
-			return m, nil
-
-		case key.Matches(msg, m.keys.removeAction):
-			d, oa, err := m.out.Undo(m.in)
-			if err != nil { // we should not have errors in the stack
-				m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
-				return m, nil
-			}
-			m.out = d
-			m.list.NewStatusMessage(statusMessageStyle("Removed action: " + oa.Title()))
-
-			m.list.Title = fmt.Sprintf("%s: %s", m.out.Format.Name, strings.TrimRight(m.out.String(), "\r\n"))
-
-			m.list.ResetFilter()
-
-			actions := m.r.ActionsForData(m.out)
-			items := make([]list.Item, len(actions))
-			for i := 0; i < len(actions); i++ {
-				items[i] = actions[i]
-			}
-			m.list.SetItems(items)
-
-			return m, nil
-
-		case msg.String() == "enter":
-			a, ok := m.list.SelectedItem().(*action.Action)
-			if ok {
-				out, err := a.Transform(m.out)
-				if err != nil {
-					m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
-					return m, nil
-				}
-				m.list.Title = fmt.Sprintf("%s: %s", out.Format.Name, strings.TrimRight(out.String(), "\r\n"))
-				m.out = out
-
-				m.list.ResetFilter()
-
-				actions := m.r.ActionsForData(m.out)
-				items := make([]list.Item, len(actions))
-				for i := 0; i < len(actions); i++ {
-					items[i] = actions[i]
-				}
-				m.list.SetItems(items)
-			}
-		}
-	}
-
-	// This will also call our delegate's update function.
-	newListModel, cmd := m.list.Update(msg)
-	m.list = newListModel
-	cmds = append(cmds, cmd)
-
-	return m, tea.Batch(cmds...)
-}
-
-func (m model) View() string {
-	return appStyle.Render(m.list.View())
 }
 
 func main() {
-	readStdin := flag.Bool("s", false, "Use Stdin as input, default to clipboard")
+	readStdin := flag.Bool("s", false, "Use Stdin as input data (conflicts with TUI interaction if piped directly)")
+	inputFile := flag.String("i", "", "Input file path (read data from file)")
+	rawOutput := flag.Bool("r", false, "Raw output, only the modified string")
+	outputFile := flag.String("o", "", "Output file path (writes raw output to file)")
 	debug := flag.Bool("debug", false, "Debug in debug.log file")
 
 	flag.Parse()
@@ -226,20 +90,35 @@ func main() {
 	}
 
 	err := clipboard.Init()
-	if err != nil {
+	// Only panic on clipboard init error if we absolutely need it (no input file/stdin provided)
+	if err != nil && *inputFile == "" && !*readStdin {
 		panic(err)
 	}
 
 	var input []byte
 
-	if *readStdin {
+	// Priority: 1. Input File, 2. Stdin, 3. Clipboard
+	if *inputFile != "" {
+		f, err := os.ReadFile(*inputFile)
+		if err != nil {
+			fmt.Printf("Error reading input file: %v\n", err)
+			os.Exit(1)
+		}
+		input = f
+	} else if *readStdin {
 		stdin, _ := io.ReadAll(os.Stdin)
 		input = stdin
 	} else {
-		input = []byte(clipboard.Read(clipboard.FmtText))
+		input = clipboard.Read(clipboard.FmtText)
 	}
 
-	p := tea.NewProgram(newModel(input))
+	// Important: We strictly use NewProgram. If 'ovr' was invoked with a file input (-i),
+	// stdin remains attached to the terminal, allowing the TUI to work.
+	p := tea.NewProgram(
+		newModel(input),
+		tea.WithMouseCellMotion(),
+	)
+
 	m, err := p.Run()
 	if err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
@@ -247,11 +126,25 @@ func main() {
 	}
 
 	if m, ok := m.(model); ok {
-		fmt.Printf("%s\n---\n%s\n", m.out.StackString(), m.out.String())
+		finalOutput := m.out.String()
 
-		// putting output in clipboard
-		if !*readStdin {
-			clipboard.Write(clipboard.FmtText, []byte(m.out.String()))
+		if *outputFile != "" {
+			err := os.WriteFile(*outputFile, []byte(finalOutput), 0644)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error writing output file: %v\n", err)
+				os.Exit(1)
+			}
+			return
+		}
+
+		if *rawOutput {
+			fmt.Print(finalOutput)
+		} else {
+			fmt.Printf("%s\n---\n%s\n", m.out.StackString(), finalOutput)
+		}
+
+		if *inputFile == "" && !*readStdin {
+			clipboard.Write(clipboard.FmtText, []byte(finalOutput))
 		}
 	}
 }

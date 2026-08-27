@@ -10,72 +10,76 @@ import (
 )
 
 func (r *ActionRegistry) TextAction(action string, in []byte) ([]byte, error) {
-	a, ok := r.m[textFormat.Prefix+","+action]
+	a, ok := r.m[TextFormat.Prefix+","+action]
 	if !ok {
 		return nil, fmt.Errorf("action %s does not exist for text input", action)
 	}
 
-	ab, err := a.Func(in)
+	ab, err := a.Func(a, in)
 	return ab.([]byte), err
 }
 
 func (r *ActionRegistry) BinAction(action string, in []byte) ([]byte, error) {
-	a, ok := r.m[binFormat.Prefix+","+action]
+	a, ok := r.m[BinFormat.Prefix+","+action]
 	if !ok {
 		return nil, fmt.Errorf("action %s does not exist for bin input", action)
 	}
-	ab, err := a.Func(in)
+	ab, err := a.Func(a, in)
 	return ab.([]byte), err
 }
 
 func (r *ActionRegistry) TextTimeAction(action string, in []byte) (time.Time, error) {
-	a, ok := r.m[textFormat.Prefix+","+action]
+	a, ok := r.m[TextFormat.Prefix+","+action]
 	if !ok {
 		return time.Time{}, fmt.Errorf("action %s does not exist for text input", action)
 	}
-	ab, err := a.Func(in)
+	ab, err := a.Func(a, in)
 	return ab.(time.Time), err
 }
 
 func (r *ActionRegistry) TimeTextAction(action string, in time.Time) ([]byte, error) {
-	a, ok := r.m[timeFormat.Prefix+","+action]
+	a, ok := r.m[TimeFormat.Prefix+","+action]
 	if !ok {
 		return nil, fmt.Errorf("action %s does not exist for time input", action)
 	}
-	ab, err := a.Func(in)
+	ab, err := a.Func(a, in)
 	return ab.([]byte), err
 }
 
 func (r *ActionRegistry) TimeAction(action string, in time.Time) (time.Time, error) {
-	a, ok := r.m[timeFormat.Prefix+","+action]
+	a, ok := r.m[TimeFormat.Prefix+","+action]
 	if !ok {
 		return time.Time{}, fmt.Errorf("action %s does not exist for time input", action)
 	}
-	ab, err := a.Func(in)
+	ab, err := a.Func(a, in)
 	return ab.(time.Time), err
 }
 
-func (r *ActionRegistry) TextTextListAction(action string, in []byte) ([]string, error) {
-	a, ok := r.m[textFormat.Prefix+","+action]
+func (r *ActionRegistry) TextTextListAction(action string, params []any, in []byte) ([]string, error) {
+	a, ok := r.m[TextFormat.Prefix+","+action]
 	if !ok {
 		return nil, fmt.Errorf("action %s does not exist for list of string input", action)
 	}
-	ab, err := a.Func(in)
+
+	a.InputParameters = params
+	ab, err := a.Func(a, in)
 	return ab.([]string), err
 }
 
-func (r *ActionRegistry) TextListTextListAction(action string, in []string) ([]string, error) {
-	a, ok := r.m[textListFormat.Prefix+","+action]
+func (r *ActionRegistry) TextListTextListAction(action string, params []any, in []string) ([]string, error) {
+	a, ok := r.m[TextListFormat.Prefix+","+action]
 	if !ok {
 		// special case to apply text to list of text
-		a, ok = r.m[textFormat.Prefix+","+action]
+		a, ok = r.m[TextFormat.Prefix+","+action]
 		if !ok {
 			return nil, fmt.Errorf("action %s does not exist for list of string input", action)
 		}
 
+		a.InputParameters = params
+
 		resp := make([]string, len(in))
 		for i, s := range in {
-			v, err := a.Func([]byte(s))
+			v, err := a.Func(a, []byte(s))
 			if err != nil {
 				return nil, err
 			}
@@ -83,16 +87,23 @@ func (r *ActionRegistry) TextListTextListAction(action string, in []string) ([]s
 		}
 		return resp, nil
 	}
-	ab, err := a.Func(in)
+
+	a.InputParameters = params
+
+	ab, err := a.Func(a, in)
 	return ab.([]string), err
 }
 
-func (r *ActionRegistry) TextListTextAction(action string, in []string) ([]byte, error) {
-	a, ok := r.m[textListFormat.Prefix+","+action]
+func (r *ActionRegistry) TextListTextAction(action string, params []any, in []string) ([]byte, error) {
+	a, ok := r.m[TextListFormat.Prefix+","+action]
 	if !ok {
 		return nil, fmt.Errorf("action %s does not exist for list of string input", action)
 	}
-	ab, err := a.Func(in)
+	a.InputParameters = params
+	ab, err := a.Func(a, in)
+	if err != nil {
+		return nil, err
+	}
 	return ab.([]byte), err
 }
 
@@ -102,14 +113,18 @@ func TestAction_TextTextListTransform(t *testing.T) {
 	tests := []struct {
 		action  string
 		in      string
+		params  []any
 		want    []string
 		wantErr bool
 	}{
-		{action: "comma", in: "hello", want: nil, wantErr: true},
-		{"comma", "a,b", []string{"a", "b"}, false},
+		{"comma", "hello", nil, nil, true},
+		{"comma", "a,b", nil, []string{"a", "b"}, false},
+		{"space", "a  b", nil, []string{"a", "b"}, false},
+		{"pipe", "a|b", nil, []string{"a", "b"}, false},
 		{
 			"jwt",
 			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlJvYmVydCIsImlhdCI6MTUxNjIzOTAyMn0.fiHN5qbwhxBjwxLKSXfDV4wkVeuNeV8URADmuiYYYQo",
+			nil,
 			[]string{`{"alg":"HS256","typ":"JWT"}`, `{"sub":"1234567890","name":"Robert","iat":1516239022}`},
 			false,
 		},
@@ -117,7 +132,7 @@ func TestAction_TextTextListTransform(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.action, func(t *testing.T) {
-			got, err := r.TextTextListAction(tt.action, []byte(tt.in))
+			got, err := r.TextTextListAction(tt.action, tt.params, []byte(tt.in))
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
@@ -134,16 +149,17 @@ func TestAction_TextListTextListTransform(t *testing.T) {
 	tests := []struct {
 		action  string
 		in      []string
+		params  []any
 		want    []string
 		wantErr bool
 	}{
-		{"upper", []string{"a", "b"}, []string{"A", "B"}, false},
-		{"lower", []string{"A", "B"}, []string{"a", "b"}, false},
+		{"upper", []string{"a", "b"}, nil, []string{"A", "B"}, false},
+		{"lower", []string{"A", "B"}, nil, []string{"a", "b"}, false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.action, func(t *testing.T) {
-			got, err := r.TextListTextListAction(tt.action, tt.in)
+			got, err := r.TextListTextListAction(tt.action, tt.params, tt.in)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
@@ -160,17 +176,24 @@ func TestAction_TextListTextTransform(t *testing.T) {
 	tests := []struct {
 		action  string
 		in      []string
+		params  []any
 		want    string
 		wantErr bool
 	}{
-		{action: "comma", in: []string{"a", "b"}, want: "a,b", wantErr: false},
-		{"first", []string{"A", "B", "C"}, "A", false},
-		{"last", []string{"A", "B", "C"}, "C", false},
+		{"comma", []string{"a", "b"}, nil, "a,b", false},
+		{"first", []string{"A", "B", "C"}, nil, "A", false},
+		{"last", []string{"A", "B", "C"}, nil, "C", false},
+		{"index", []string{"A", "B", "C"}, []any{0}, "A", false},
+		{action: "index", in: []string{"A", "B", "C"}, params: []any{1}, want: "B", wantErr: false},
+		{action: "index", in: []string{"A", "B", "C"}, params: []any{2}, want: "C", wantErr: false},
+		{action: "index", in: []string{"A", "B", "C"}, params: []any{3}, want: "", wantErr: true},
+		{action: "join", in: []string{"A", "B", "C"}, params: []any{"|"}, want: "A|B|C", wantErr: false},
+		{action: "line", in: []string{"A", "B", "C"}, params: nil, want: "A\nB\nC", wantErr: false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.action, func(t *testing.T) {
-			got, err := r.TextListTextAction(tt.action, tt.in)
+			got, err := r.TextListTextAction(tt.action, tt.params, tt.in)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
@@ -205,12 +228,16 @@ func TestAction_TextTransform(t *testing.T) {
 		{"tohex", "HELLO", "48454c4c4f", false},
 		{action: "base64", in: "aGVsbG8=", want: "hello", wantErr: false},
 		{action: "tobase64", in: "hello", want: "aGVsbG8=", wantErr: false},
+		{action: "unescape", in: "hello\\ntoto", want: "hello\ntoto", wantErr: false},
 		{action: "minify", in: `{
 			"engine_version":   "1.7"
 		  }`, want: `{"engine_version":"1.7"}`, wantErr: false},
 		{action: "jsoncompact", in: `{
 			"engine_version":   "1.7"
 		  }`, want: `{"engine_version":"1.7"}`, wantErr: false},
+		{action: "jsonpretty", in: `{"engine_version":"1.7"}`, want: `{
+  "engine_version": "1.7"
+}`, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.action, func(t *testing.T) {

@@ -96,19 +96,19 @@ func TestAction_GeoTextTransform(t *testing.T) {
 }
 
 func (r *ActionRegistry) TextGeoAction(action string, in []byte) (geom.Geometry, error) {
-	a, ok := r.m[textFormat.Prefix+","+action]
+	a, ok := r.m[TextFormat.Prefix+","+action]
 	if !ok {
 		return geom.Geometry{}, fmt.Errorf("action %s does not exist for text input", action)
 	}
-	ab, err := a.Func(in)
+	ab, err := a.Func(a, in)
 	return ab.(geom.Geometry), err
 }
 
 func (r *ActionRegistry) GeoTextAction(action string, in geom.Geometry) ([]byte, error) {
-	a, ok := r.m[geoFormat.Prefix+","+action]
+	a, ok := r.m[GeoFormat.Prefix+","+action]
 	if !ok {
 		return nil, fmt.Errorf("action %s does not exist for geo input", action)
 	}
-	ab, err := a.Func(in)
+	ab, err := a.Func(a, in)
 	return ab.([]byte), err
 }

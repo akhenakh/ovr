@@ -1,6 +1,7 @@
 package action
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -21,8 +22,9 @@ var all = []Action{
 	toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
 	parseJSONDateStringAction, epochTimeAction,
 	estTimeAction, etTimeAction, utcTimeAction, isoTimeAction, timeEpochAction,
-	commaTextListAction, jwtTextListAction, textListJoinCommaAction, jsonCompactAction,
-	textListFirstAction, textListLastAction,
+	spaceTextListAction, pipeTextListAction,
+	commaTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction, jsonPrettifyAction,
+	textListFirstAction, textListLastAction, textListIndexAction, unescapeTextAction,
 }
 
 func DefaultRegistry() *ActionRegistry {
@@ -54,36 +56,62 @@ func (r *ActionRegistry) RegisterActions(actions ...Action) {
 func (r *ActionRegistry) RegisterAction(a Action) {
 	for _, name := range a.Names {
 		key := a.InputFormat.Prefix + "," + name
+
+		if _, exist := r.m[key]; exist {
+			panic(fmt.Sprintf("registering action conflict for %s", key))
+		}
 		r.m[key] = &a
 	}
+}
+
+// ActionByName returns an action for an exact name match
+func (r *ActionRegistry) MustActionByName(format Format, name string) (action *Action) {
+	key := format.Prefix + "," + name
+	a, ok := r.m[key]
+	if !ok {
+		panic(fmt.Sprintf("no action %s", key))
+	}
+	return a
 }
 
 // ActionsForText returns a list of actions, prefix by search, all if search is empty
 // ordered alphabetically
 func (r *ActionRegistry) ActionsForText(search string) (actions []*Action) {
+	added := make(map[*Action]bool)
 	for k, a := range r.m {
-		if strings.HasPrefix(k, textFormat.Prefix+",") {
-			actions = append(actions, a)
+		if strings.HasPrefix(k, TextFormat.Prefix+",") {
+			if !added[a] {
+				actions = append(actions, a)
+				added[a] = true
+			}
 		}
-
-		sort.Slice(actions, func(i, j int) bool { return actions[i].Names[0] < actions[j].Names[0] })
 	}
+	sort.Slice(actions, func(i, j int) bool { return actions[i].Names[0] < actions[j].Names[0] })
 	return
 }
 
 func (r *ActionRegistry) ActionsForData(data *Data) (actions []*Action) {
+	added := make(map[*Action]bool)
 	for k, a := range r.m {
+		isApplicable := false
+
+		// Action's input format matches the data's format
 		if strings.HasPrefix(k, data.Format.Prefix+",") {
-			actions = append(actions, a)
+			isApplicable = true
+		} else if data.Format == TextListFormat && a.InputFormat == TextFormat && a.OutputFormat == TextFormat {
+			// Special case: text-to-text actions can be applied to each item of a text list
+			isApplicable = true
 		}
 
-		// in case we have a textList we also want to apply text filter, that can output text
-		if data.Format == textListFormat && a.InputFormat == textFormat && a.OutputFormat == textFormat {
-			actions = append(actions, a)
+		if isApplicable {
+			if !added[a] {
+				actions = append(actions, a)
+				added[a] = true
+			}
 		}
-
-		sort.Slice(actions, func(i, j int) bool { return actions[i].Names[0] < actions[j].Names[0] })
 	}
+
+	sort.Slice(actions, func(i, j int) bool { return actions[i].Names[0] < actions[j].Names[0] })
 
 	return
 }
