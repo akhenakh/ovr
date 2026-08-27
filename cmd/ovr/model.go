@@ -190,15 +190,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case msg.String() == "enter":
-			a, ok := m.list.SelectedItem().(*action.Action)
+			a, ok := m.list.SelectedItem().(action.Action)
 			if !ok {
 				break
 			}
 
-			m.paramsInput = make([]textinput.Model, len(a.Parameters))
+			m.paramsInput = make([]textinput.Model, len(a.Parameters()))
 
-			if len(a.Parameters) > 0 {
-				for i, ap := range a.Parameters {
+			if len(a.Parameters()) > 0 {
+				for i, ap := range a.Parameters() {
 					ti := textinput.New()
 					switch ap.ActionParameterType {
 					case action.IntParameter:
@@ -281,11 +281,11 @@ func updateParams(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 			// Did the user press enter while the submit button was focused?
 			// If so, exit the view and try apply the values.
 			if s == "enter" && m.focusIndex == len(m.paramsInput) {
-				a, _ := m.list.SelectedItem().(*action.Action)
-				a.InputParameters = nil // Clear previous parameters
+				a, _ := m.list.SelectedItem().(action.Action)
 				m.state = mainListState
 
-				for i, ap := range a.Parameters {
+				values := make([]any, len(a.Parameters()))
+				for i, ap := range a.Parameters() {
 					switch ap.ActionParameterType {
 					case action.IntParameter:
 						v, err := strconv.Atoi(m.paramsInput[i].Value())
@@ -293,21 +293,26 @@ func updateParams(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 							m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
 							return m, nil
 						}
-						a.InputParameters = append(a.InputParameters, v)
+						values[i] = v
 					case action.FloatParameter:
 						v, err := strconv.ParseFloat(m.paramsInput[i].Value(), 64)
 						if err != nil {
 							m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
 							return m, nil
 						}
-						a.InputParameters = append(a.InputParameters, v)
+						values[i] = v
 					case action.StringParameter:
 						if m.paramsInput[i].Value() == "" {
 							m.list.NewStatusMessage(errorMessageStyle("Error string parameter is empty"))
 							return m, nil
 						}
-						a.InputParameters = append(a.InputParameters, m.paramsInput[i].Value())
+						values[i] = m.paramsInput[i].Value()
 					}
+				}
+
+				if err := a.SetInputParameters(values...); err != nil {
+					m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
+					return m, nil
 				}
 
 				out, err := a.Transform(m.out)
@@ -417,12 +422,12 @@ func (m model) View() string {
 	case paramState:
 		var b strings.Builder
 
-		a, _ := m.list.SelectedItem().(*action.Action)
+		a, _ := m.list.SelectedItem().(action.Action)
 
-		fmt.Fprintf(&b, "Parameters for %s\n\n", a.Names[0])
+		fmt.Fprintf(&b, "Parameters for %s\n\n", a.Names()[0])
 
 		for i := range m.paramsInput {
-			b.WriteString(a.Parameters[i].Doc)
+			b.WriteString(a.Parameters()[i].Doc)
 			b.WriteRune('\n')
 			b.WriteString(m.paramsInput[i].View())
 			if i < len(m.paramsInput)-1 {

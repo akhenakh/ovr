@@ -14,6 +14,10 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 cmd/ovr/ovr
+ovrui
+cmd/ovrui/ovrui
 # debug logs and local binaries
 debug.log
 ovr
+ovrui
+cmd/ovrui/ovrui

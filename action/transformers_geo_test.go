@@ -1,5 +1,4 @@
 //go:build geo
-// +build geo
 
 package action
 
@@ -16,7 +15,7 @@ import (
 func TestAction_TextGeoTransform(t *testing.T) {
 	r := NewRegistry()
 
-	r.RegisterActions(geoActions...)
+	r.RegisterActions(cloneActions(geoActions)...)
 
 	tests := []struct {
 		action  string
@@ -44,7 +43,7 @@ func TestAction_TextGeoTransform(t *testing.T) {
 func TestAction_GeoTextTransform(t *testing.T) {
 	r := NewRegistry()
 
-	r.RegisterActions(geoActions...)
+	r.RegisterActions(cloneActions(geoActions)...)
 
 	tests := []struct {
 		action       string
@@ -95,20 +94,88 @@ func TestAction_GeoTextTransform(t *testing.T) {
 	}
 }
 
-func (r *ActionRegistry) TextGeoAction(action string, in []byte) (geom.Geometry, error) {
-	a, ok := r.m[TextFormat.Prefix+","+action]
-	if !ok {
-		return geom.Geometry{}, fmt.Errorf("action %s does not exist for text input", action)
-	}
-	ab, err := a.Func(a, in)
-	return ab.(geom.Geometry), err
+func TestAction_GeoCoverTransform(t *testing.T) {
+	r := NewRegistry()
+
+	r.RegisterActions(cloneActions(geoActions)...)
+
+	point := `{"type":"Point","coordinates":[2.2,48.8]}`
+
+	t.Run("s2cover point", func(t *testing.T) {
+		a := r.MustActionByName(GeoFormat, "s2cover")
+		require.NoError(t, a.SetInputParameters(5, 30, 8))
+
+		g := mustGeoJSON(t, point)
+		out, err := a.Transform(NewDataGeom(g))
+		require.NoError(t, err)
+		require.Equal(t, "47e67b949f715c6b", string(out.RawValue))
+	})
+
+	t.Run("s2cover polygon", func(t *testing.T) {
+		a := r.MustActionByName(GeoFormat, "s2cover")
+		require.NoError(t, a.SetInputParameters(0, 30, 8))
+
+		g := mustGeoJSON(t, `{"type":"Polygon","coordinates":[[[0,0],[0,1],[1,1],[1,0],[0,0]]]}`)
+		out, err := a.Transform(NewDataGeom(g))
+		require.NoError(t, err)
+		require.NotEmpty(t, string(out.RawValue))
+	})
+
+	t.Run("h3cover point", func(t *testing.T) {
+		a := r.MustActionByName(GeoFormat, "h3cover")
+		require.NoError(t, a.SetInputParameters(5))
+
+		g := mustGeoJSON(t, point)
+		out, err := a.Transform(NewDataGeom(g))
+		require.NoError(t, err)
+		require.Equal(t, "851fb463fffffff", string(out.RawValue))
+	})
+
+	t.Run("h3cover polygon", func(t *testing.T) {
+		a := r.MustActionByName(GeoFormat, "h3cover")
+		require.NoError(t, a.SetInputParameters(5))
+
+		g := mustGeoJSON(t, `{"type":"Polygon","coordinates":[[[0,0],[0,1],[1,1],[1,0],[0,0]]]}`)
+		out, err := a.Transform(NewDataGeom(g))
+		require.NoError(t, err)
+		require.NotEmpty(t, string(out.RawValue))
+	})
 }
 
-func (r *ActionRegistry) GeoTextAction(action string, in geom.Geometry) ([]byte, error) {
-	a, ok := r.m[GeoFormat.Prefix+","+action]
+func mustGeoJSON(t *testing.T, s string) geom.Geometry {
+	t.Helper()
+	var g geom.Geometry
+	err := json.NewDecoder(strings.NewReader(s)).Decode(&g)
+	require.NoError(t, err)
+	return g
+}
+
+func (r *ActionRegistry) TextGeoAction(name string, in []byte) (geom.Geometry, error) {
+	a, ok := r.ActionByName(TextFormat, name)
 	if !ok {
-		return nil, fmt.Errorf("action %s does not exist for geo input", action)
+		return geom.Geometry{}, fmt.Errorf("action %s does not exist for text input", name)
 	}
-	ab, err := a.Func(a, in)
-	return ab.([]byte), err
+
+	out, err := a.Transform(NewDataText(in))
+	if err != nil {
+		return geom.Geometry{}, err
+	}
+	g, ok := out.Value.(geom.Geometry)
+	if !ok {
+		return geom.Geometry{}, fmt.Errorf("output is not a geometry")
+	}
+	return g, nil
+}
+
+func (r *ActionRegistry) GeoTextAction(name string, in geom.Geometry) ([]byte, error) {
+	a, ok := r.ActionByName(GeoFormat, name)
+	if !ok {
+		return nil, fmt.Errorf("action %s does not exist for geo input", name)
+	}
+
+	out, err := a.Transform(NewDataGeom(in))
+	if err != nil {
+		return nil, err
+	}
+	return out.RawValue, nil
 }

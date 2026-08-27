@@ -15,7 +15,7 @@ type Data struct {
 	Value          any
 	Format         Format
 	StructuredData map[string]any
-	Stack          []*Action
+	Stack          []Action
 }
 
 var ErrEmptyStack = errors.New("empty stack")
@@ -24,33 +24,49 @@ func NewDataText(v []byte) *Data {
 	return &Data{RawValue: v, Format: TextFormat}
 }
 
-func (d *Data) StoreTextValue(v []byte, a *Action) *Data {
+func NewDataBin(v []byte) *Data {
+	return &Data{RawValue: v, Format: BinFormat}
+}
+
+func NewDataTextList(l []string) *Data {
+	return &Data{Value: l, Format: TextListFormat}
+}
+
+func NewDataTime(t time.Time) *Data {
+	return &Data{Value: t, Format: TimeFormat}
+}
+
+func NewDataGeom(g geom.Geometry) *Data {
+	return &Data{Value: g, Format: GeoFormat}
+}
+
+func (d *Data) StoreTextValue(v []byte, a Action) *Data {
 	return &Data{RawValue: v, Format: TextFormat, Stack: append(d.Stack, a)}
 }
 
-func (d *Data) StoreTextListValue(l []string, a *Action) *Data {
+func (d *Data) StoreTextListValue(l []string, a Action) *Data {
 	return &Data{Value: l, Format: TextListFormat, Stack: append(d.Stack, a)}
 }
 
-func (d *Data) StoreTimeValue(t time.Time, a *Action) *Data {
+func (d *Data) StoreTimeValue(t time.Time, a Action) *Data {
 	return &Data{Value: t, Stack: append(d.Stack, a), Format: TimeFormat}
 }
 
-func (d *Data) StoreGeomValue(g geom.Geometry, a *Action) *Data {
+func (d *Data) StoreGeomValue(g geom.Geometry, a Action) *Data {
 	return &Data{Value: g, Stack: append(d.Stack, a), Format: GeoFormat}
 }
 
-func (d *Data) StoreJSONValue(t time.Time, a *Action) *Data {
-	return &Data{Value: t, Stack: append(d.Stack, a), Format: JSONFormat}
+func (d *Data) StoreJSONValue(v any, a Action) *Data {
+	return &Data{Value: v, Stack: append(d.Stack, a), Format: JSONFormat}
 }
 
 // Undo removed the last actions if any
 // Reapply the stack with input
-func (d *Data) Undo(in []byte) (*Data, *Action, error) {
+func (d *Data) Undo(in []byte) (*Data, Action, error) {
 	if len(d.Stack) == 0 {
 		return nil, nil, ErrEmptyStack
 	}
-	var oa *Action
+	var oa Action
 
 	oa, d.Stack = d.Stack[len(d.Stack)-1], d.Stack[:len(d.Stack)-1]
 
@@ -74,6 +90,9 @@ func (d *Data) String() string {
 	case TimeFormat:
 		t := d.Value.(time.Time)
 		return t.String()
+	case GeoFormat:
+		g := d.Value.(geom.Geometry)
+		return g.AsText()
 	default:
 		return fmt.Sprintf("%v", d.Value)
 	}

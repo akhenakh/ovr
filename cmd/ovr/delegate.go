@@ -13,7 +13,7 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 	d.UpdateFunc = func(msg tea.Msg, m *list.Model) tea.Cmd {
 		var title string
 
-		if a, ok := m.SelectedItem().(*action.Action); ok {
+		if a, ok := m.SelectedItem().(action.Action); ok {
 			title = a.Title()
 		} else {
 			return nil

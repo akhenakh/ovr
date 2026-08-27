@@ -2,13 +2,13 @@ package action
 
 import (
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 )
 
 type ActionRegistry struct {
-	m map[string]*Action
+	m map[string]Action
 }
 
 var (
@@ -35,12 +35,12 @@ func DefaultRegistry() *ActionRegistry {
 }
 
 func NewRegistry() *ActionRegistry {
-	m := make(map[string]*Action)
+	m := make(map[string]Action)
 	r := &ActionRegistry{
 		m: m,
 	}
 
-	r.RegisterActions(all...)
+	r.RegisterActions(cloneActions(all)...)
 
 	return r
 }
@@ -54,30 +54,34 @@ func (r *ActionRegistry) RegisterActions(actions ...Action) {
 
 // RegisterAction registers an action by its input , names
 func (r *ActionRegistry) RegisterAction(a Action) {
-	for _, name := range a.Names {
-		key := a.InputFormat.Prefix + "," + name
-
+	for _, name := range a.Names() {
+		key := a.InputFormat().Prefix + "," + name
 		if _, exist := r.m[key]; exist {
 			panic(fmt.Sprintf("registering action conflict for %s", key))
 		}
-		r.m[key] = &a
+		r.m[key] = a
 	}
 }
 
 // ActionByName returns an action for an exact name match
-func (r *ActionRegistry) MustActionByName(format Format, name string) (action *Action) {
-	key := format.Prefix + "," + name
-	a, ok := r.m[key]
+func (r *ActionRegistry) ActionByName(format Format, name string) (Action, bool) {
+	a, ok := r.m[format.Prefix+","+name]
+	return a, ok
+}
+
+// MustActionByName returns an action for an exact name match, panics otherwise
+func (r *ActionRegistry) MustActionByName(format Format, name string) Action {
+	a, ok := r.ActionByName(format, name)
 	if !ok {
-		panic(fmt.Sprintf("no action %s", key))
+		panic(fmt.Sprintf("no action %s,%s", format.Prefix, name))
 	}
 	return a
 }
 
 // ActionsForText returns a list of actions, prefix by search, all if search is empty
 // ordered alphabetically
-func (r *ActionRegistry) ActionsForText(search string) (actions []*Action) {
-	added := make(map[*Action]bool)
+func (r *ActionRegistry) ActionsForText(search string) (actions []Action) {
+	added := make(map[Action]bool)
 	for k, a := range r.m {
 		if strings.HasPrefix(k, TextFormat.Prefix+",") {
 			if !added[a] {
@@ -86,19 +90,19 @@ func (r *ActionRegistry) ActionsForText(search string) (actions []*Action) {
 			}
 		}
 	}
-	sort.Slice(actions, func(i, j int) bool { return actions[i].Names[0] < actions[j].Names[0] })
+	sortActions(actions)
 	return
 }
 
-func (r *ActionRegistry) ActionsForData(data *Data) (actions []*Action) {
-	added := make(map[*Action]bool)
+func (r *ActionRegistry) ActionsForData(data *Data) (actions []Action) {
+	added := make(map[Action]bool)
 	for k, a := range r.m {
 		isApplicable := false
 
 		// Action's input format matches the data's format
 		if strings.HasPrefix(k, data.Format.Prefix+",") {
 			isApplicable = true
-		} else if data.Format == TextListFormat && a.InputFormat == TextFormat && a.OutputFormat == TextFormat {
+		} else if data.Format == TextListFormat && a.InputFormat() == TextFormat && a.OutputFormat() == TextFormat {
 			// Special case: text-to-text actions can be applied to each item of a text list
 			isApplicable = true
 		}
@@ -111,7 +115,21 @@ func (r *ActionRegistry) ActionsForData(data *Data) (actions []*Action) {
 		}
 	}
 
-	sort.Slice(actions, func(i, j int) bool { return actions[i].Names[0] < actions[j].Names[0] })
+	sortActions(actions)
 
 	return
+}
+
+func sortActions(actions []Action) {
+	slices.SortFunc(actions, func(a, b Action) int {
+		return strings.Compare(a.Names()[0], b.Names()[0])
+	})
+}
+
+func cloneActions(actions []Action) []Action {
+	out := make([]Action, len(actions))
+	for i, a := range actions {
+		out[i] = a.clone()
+	}
+	return out
 }
