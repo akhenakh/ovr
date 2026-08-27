@@ -72,7 +72,10 @@ func newListKeyMap() *listKeyMap {
 }
 
 func main() {
-	readStdin := flag.Bool("s", false, "Use Stdin as input, default to clipboard")
+	readStdin := flag.Bool("s", false, "Use Stdin as input data (conflicts with TUI interaction if piped directly)")
+	inputFile := flag.String("i", "", "Input file path (read data from file)")
+	rawOutput := flag.Bool("r", false, "Raw output, only the modified string")
+	outputFile := flag.String("o", "", "Output file path (writes raw output to file)")
 	debug := flag.Bool("debug", false, "Debug in debug.log file")
 
 	flag.Parse()
@@ -87,23 +90,33 @@ func main() {
 	}
 
 	err := clipboard.Init()
-	if err != nil {
+	// Only panic on clipboard init error if we absolutely need it (no input file/stdin provided)
+	if err != nil && *inputFile == "" && !*readStdin {
 		panic(err)
 	}
 
 	var input []byte
 
-	if *readStdin {
+	// Priority: 1. Input File, 2. Stdin, 3. Clipboard
+	if *inputFile != "" {
+		f, err := os.ReadFile(*inputFile)
+		if err != nil {
+			fmt.Printf("Error reading input file: %v\n", err)
+			os.Exit(1)
+		}
+		input = f
+	} else if *readStdin {
 		stdin, _ := io.ReadAll(os.Stdin)
 		input = stdin
 	} else {
 		input = clipboard.Read(clipboard.FmtText)
 	}
 
+	// Important: We strictly use NewProgram. If 'ovr' was invoked with a file input (-i),
+	// stdin remains attached to the terminal, allowing the TUI to work.
 	p := tea.NewProgram(
 		newModel(input),
-		// tea.WithAltScreen(),       // use the full size of the terminal in its "alternate screen buffer"
-		tea.WithMouseCellMotion(), // turn on mouse support so we can track the mouse wheel
+		tea.WithMouseCellMotion(),
 	)
 
 	m, err := p.Run()
@@ -113,11 +126,25 @@ func main() {
 	}
 
 	if m, ok := m.(model); ok {
-		fmt.Printf("%s\n---\n%s\n", m.out.StackString(), m.out.String())
+		finalOutput := m.out.String()
 
-		// putting output in clipboard
-		if !*readStdin {
-			clipboard.Write(clipboard.FmtText, []byte(m.out.String()))
+		if *outputFile != "" {
+			err := os.WriteFile(*outputFile, []byte(finalOutput), 0644)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error writing output file: %v\n", err)
+				os.Exit(1)
+			}
+			return
+		}
+
+		if *rawOutput {
+			fmt.Print(finalOutput)
+		} else {
+			fmt.Printf("%s\n---\n%s\n", m.out.StackString(), finalOutput)
+		}
+
+		if *inputFile == "" && !*readStdin {
+			clipboard.Write(clipboard.FmtText, []byte(finalOutput))
 		}
 	}
 }
