@@ -1,6 +1,17 @@
 package action
 
-import "net/http"
+import (
+	"net/http"
+	"regexp"
+)
+
+var wktRe = regexp.MustCompile(`(?i)^\s*(POINT|LINESTRING|POLYGON|MULTIPOINT|MULTILINESTRING|MULTIPOLYGON|GEOMETRYCOLLECTION)\s*(ZM|Z|M)?\s*(\(|EMPTY)`)
+
+// GuessWKT reports whether the input looks like a WKT geometry,
+// like POINT(-0.4539761 48.0930043)
+func GuessWKT(v []byte) bool {
+	return wktRe.Match(v)
+}
 
 func GuessFormat(v []byte) Format {
 	if len(v) >= 3 {

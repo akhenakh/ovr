@@ -35,7 +35,8 @@ go build -tags geo -o ovr ./cmd/ovr
 - YAML
 - TOML
 - Images
-- Geometry
+- Geometry (WKT input like `POINT(-0.4539761 48.0930043)` is auto-detected
+  and parsed, geo actions are offered immediately)
 
 ## Values Types
 

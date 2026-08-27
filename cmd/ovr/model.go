@@ -125,8 +125,22 @@ func newModel(in []byte) model {
 		listKeys     = newListKeyMap()
 	)
 
+	out := action.NewDataText(in)
+	title := fmt.Sprintf("Text: %s", strings.TrimRight(string(in), "\r\n"))
+
+	// If the input looks like WKT and the wkt action is available,
+	// start with geometry data so geo actions are offered right away
+	if action.GuessWKT(in) {
+		if a, ok := r.ActionByName(action.TextFormat, "wkt"); ok {
+			if d, err := a.Transform(action.NewDataText(in)); err == nil {
+				out = d
+				title = fmt.Sprintf("Geometry: %s", strings.TrimRight(out.String(), "\r\n"))
+			}
+		}
+	}
+
 	// Make initial list of actions
-	actions := r.ActionsForText("")
+	actions := r.ActionsForData(out)
 	items := make([]list.Item, len(actions))
 	for i := 0; i < len(actions); i++ {
 		items[i] = actions[i]
@@ -135,7 +149,7 @@ func newModel(in []byte) model {
 	// Setup list
 	delegate := newItemDelegate(delegateKeys)
 	actionList := list.New(items, delegate, 0, 0)
-	actionList.Title = fmt.Sprintf("Text: %s", strings.TrimRight(string(in), "\r\n"))
+	actionList.Title = title
 	actionList.Styles.Title = titleStyle
 	actionList.SetShowStatusBar(false)
 	actionList.AdditionalFullHelpKeys = func() []key.Binding {
@@ -157,7 +171,7 @@ func newModel(in []byte) model {
 		keys:         listKeys,
 		delegateKeys: delegateKeys,
 		in:           in,
-		out:          action.NewDataText(in),
+		out:          out,
 	}
 }
 
