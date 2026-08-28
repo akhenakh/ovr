@@ -336,6 +336,27 @@ var spaceTextListAction = New(Definition[[]byte, []string]{
 	},
 })
 
+var splitTextListAction = New(Definition[[]byte, []string]{
+	Doc:          "Parse a text input as a list separated by a provided char",
+	Names:        []string{"split"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextListFormat,
+	Parameters:   []ActionParameter{{StringParameter, "a string to split"}},
+	Func: func(a Action, in []byte) ([]string, error) {
+		p, ok := a.InputParameters()[0].(string)
+		if !ok {
+			return nil, fmt.Errorf("split parameter is not a string")
+		}
+		l := strings.Split(string(in), p)
+		if len(l) <= 1 {
+			return []string{}, fmt.Errorf("can't split using %s", p)
+		}
+
+		return l, nil
+	},
+})
+
 var pipeTextListAction = New(Definition[[]byte, []string]{
 	Doc:          "Parse a text input as a list separated by |",
 	Names:        []string{"pipe"},
@@ -415,6 +436,17 @@ var textListCharJoinAction = New(Definition[[]string, []byte]{
 			return nil, fmt.Errorf("join parameter is not a string")
 		}
 		return []byte(strings.Join(in, p)), nil
+	},
+})
+
+var textListCountAction = New(Definition[[]string, []byte]{
+	Doc:          "Count the number of elements in a list",
+	Names:        []string{"count"},
+	Type:         TransformAction,
+	InputFormat:  TextListFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in []string) ([]byte, error) {
+		return []byte(strconv.Itoa(len(in))), nil
 	},
 })
 

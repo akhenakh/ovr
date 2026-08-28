@@ -22,9 +22,9 @@ var all = []Action{
 	toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
 	parseJSONDateStringAction, epochTimeAction,
 	estTimeAction, etTimeAction, utcTimeAction, isoTimeAction, timeEpochAction,
-	spaceTextListAction, pipeTextListAction,
+	spaceTextListAction, pipeTextListAction, splitTextListAction,
 	commaTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction, jsonPrettifyAction,
-	textListFirstAction, textListLastAction, textListIndexAction, unescapeTextAction,
+	textListFirstAction, textListLastAction, textListIndexAction, textListCountAction, unescapeTextAction,
 }
 
 func DefaultRegistry() *ActionRegistry {
