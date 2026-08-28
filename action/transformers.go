@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"hash/crc32"
 	"io"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -530,5 +531,38 @@ var unescapeTextAction = New(Definition[[]byte, []byte]{
 	OutputFormat: TextFormat,
 	Func: func(a Action, in []byte) ([]byte, error) {
 		return []byte(strings.ReplaceAll(strings.ReplaceAll(string(in), "\\n", "\n"), "\\t", "\t")), nil
+	},
+})
+
+var pipeCommandAction = New(Definition[[]byte, []byte]{
+	Doc:          "Pipe the input into a shell command, the command receives the input on stdin, output is the command stdout",
+	Names:        []string{"exec", "sh"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Parameters:   []ActionParameter{{StringParameter, "the command to run"}},
+	Func: func(a Action, in []byte) ([]byte, error) {
+		p, ok := a.InputParameters()[0].(string)
+		if !ok {
+			return nil, fmt.Errorf("exec parameter is not a string")
+		}
+
+		cmd := exec.Command("sh", "-c", p) //nolint:gosec
+		cmd.Stdin = bytes.NewReader(in)
+
+		var out bytes.Buffer
+		var errBuf bytes.Buffer
+		cmd.Stdout = &out
+		cmd.Stderr = &errBuf
+
+		if err := cmd.Run(); err != nil {
+			msg := strings.TrimSpace(errBuf.String())
+			if msg != "" {
+				return nil, fmt.Errorf("%w: %s", err, msg)
+			}
+			return nil, err
+		}
+
+		return out.Bytes(), nil
 	},
 })
