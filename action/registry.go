@@ -18,7 +18,7 @@ var (
 
 var all = []Action{
 	upperAction, lowerAction, titleAction, trimSpaceAction, quoteAction, unquoteAction,
-	md5HashAction, sha1HashAction, sha256HashAction, sha512HashAction,
+	md5HashAction, sha1HashAction, sha256HashAction, sha512HashAction, crc32HashAction, hmacSha256Action,
 	toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
 	parseJSONDateStringAction, epochTimeAction,
 	estTimeAction, etTimeAction, utcTimeAction, isoTimeAction, timeEpochAction,

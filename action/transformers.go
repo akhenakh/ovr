@@ -2,6 +2,7 @@ package action
 
 import (
 	"bytes"
+	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -11,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash/crc32"
 	"io"
 	"strconv"
 	"strings"
@@ -90,6 +92,35 @@ var unquoteAction = New(Definition[[]byte, []byte]{
 	Func: func(a Action, in []byte) ([]byte, error) {
 		unescape, err := strconv.Unquote(string(in))
 		return []byte(unescape), err
+	},
+})
+
+var hmacSha256Action = New(Definition[[]byte, []byte]{
+	Doc:          "HMAC SHA256 of the data with the key parameter, to hex string",
+	Names:        []string{"hmac"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Parameters:   []ActionParameter{{StringParameter, "the HMAC key"}},
+	Func: func(a Action, in []byte) ([]byte, error) {
+		p, ok := a.InputParameters()[0].(string)
+		if !ok {
+			return nil, fmt.Errorf("hmac parameter is not a string")
+		}
+		mac := hmac.New(sha256.New, []byte(p))
+		mac.Write(in)
+		return []byte(hex.EncodeToString(mac.Sum(nil))), nil
+	},
+})
+
+var crc32HashAction = New(Definition[[]byte, []byte]{
+	Doc:          "CRC32 checksum of the data to hex string",
+	Names:        []string{"crc32"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in []byte) ([]byte, error) {
+		return []byte(fmt.Sprintf("%08x", crc32.ChecksumIEEE(in))), nil
 	},
 })
 
