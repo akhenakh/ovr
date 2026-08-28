@@ -343,6 +343,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				items[i] = actions[i]
 			}
 			m.list.SetItems(items)
+
+			m.list.NewStatusMessage(statusMessageStyle("Applying " + a.Title()))
+
+			// Return before the list gets this key press: the items were
+			// replaced above, the delegate would report the wrong selection.
+			return m, nil
 		}
 	}
 
@@ -424,6 +430,8 @@ func updateParams(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 					items[i] = actions[i]
 				}
 				m.list.SetItems(items)
+
+				m.list.NewStatusMessage(statusMessageStyle("Applying " + a.Title()))
 
 				return m, nil
 			}

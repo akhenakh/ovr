@@ -3,32 +3,10 @@ package main
 import (
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/list"
-	tea "charm.land/bubbletea/v2"
-	"github.com/akhenakh/ovr/action"
 )
 
 func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
-
-	d.UpdateFunc = func(msg tea.Msg, m *list.Model) tea.Cmd {
-		var title string
-
-		if a, ok := m.SelectedItem().(action.Action); ok {
-			title = a.Title()
-		} else {
-			return nil
-		}
-
-		switch msg := msg.(type) {
-		case tea.KeyPressMsg:
-			switch {
-			case key.Matches(msg, keys.choose):
-				return m.NewStatusMessage(statusMessageStyle("Applying " + title))
-			}
-		}
-
-		return nil
-	}
 
 	help := []key.Binding{keys.choose, keys.remove}
 
