@@ -12,7 +12,7 @@ import (
 
 func main() {
 	readStdin := flag.Bool("s", false, "Use Stdin as input data (conflicts with TUI interaction if piped directly)")
-	inputFile := flag.String("i", "", "Input file path (read data from file)")
+	inputFile := flag.String("f", "", "Input filename (read data from file)")
 	rawOutput := flag.Bool("r", false, "Raw output, only the modified string")
 	outputFile := flag.String("o", "", "Output file path (writes raw output to file)")
 	debug := flag.Bool("debug", false, "Debug in debug.log file")
@@ -29,9 +29,10 @@ func main() {
 	}
 
 	err := clipboard.Init()
-	// Only panic on clipboard init error if we absolutely need it (no input file/stdin provided)
+	// Only fail on clipboard init error if we absolutely need it (no input file/stdin provided)
 	if err != nil && *inputFile == "" && !*readStdin {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "Clipboard unavailable: %v\nUse -s to read from stdin or -f <filename> to read from a file.\n", err)
+		os.Exit(1)
 	}
 
 	var input []byte
