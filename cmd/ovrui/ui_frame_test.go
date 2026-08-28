@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 
 	. "go.hasen.dev/shirei"
@@ -13,6 +14,28 @@ func uiFrame(mouse Vec2, mouseAction MouseAction, key KeyCode) {
 	GetFrameInput().Key = key
 	GetFrameInput().Text = ""
 	RunFrameFn(RootView)
+}
+
+func TestCtrlQQuits(t *testing.T) {
+	quitCalled := false
+	quitApp = func(int) { quitCalled = true }
+	defer func() { quitApp = os.Exit }()
+
+	setInput([]byte("hello"))
+
+	// plain q without the primary modifier must not quit
+	uiFrame(Vec2{-1000, -1000}, 0, KeyQ)
+	if quitCalled {
+		t.Fatal("plain Q quit the app")
+	}
+
+	// primary modifier + Q quits
+	GetInputState().Modifiers = PrimaryMod()
+	uiFrame(Vec2{-1000, -1000}, 0, KeyQ)
+	GetInputState().Modifiers = 0
+	if !quitCalled {
+		t.Fatal("primary modifier + Q did not quit")
+	}
 }
 
 func TestClickSelectsAndEnterApplies(t *testing.T) {

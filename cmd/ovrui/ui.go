@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -12,6 +13,9 @@ import (
 )
 
 type f32 = float32
+
+// quitApp is indirected so tests can intercept the exit
+var quitApp = os.Exit
 
 type AppState struct {
 	registry *action.ActionRegistry
@@ -173,6 +177,13 @@ func reloadInput(in []byte) {
 	setStatus(fmt.Sprintf("input reloaded (%d bytes)", len(in)), false)
 }
 
+func quitHint() string {
+	if PrimaryMod() == ModCmd {
+		return "Cmd+Q quits"
+	}
+	return "Ctrl+Q quits"
+}
+
 func dataSummary() string {
 	s := appData.out.String()
 	n := len(s)
@@ -189,6 +200,10 @@ func RootView() {
 		applySelected()
 	case KeyEscape:
 		appData.search = ""
+	case KeyQ:
+		if ActiveCombo() == Combo(KeyQ, PrimaryMod()) {
+			quitApp(0)
+		}
 	}
 
 	Container(Attrs(Viewport, AmendTextStyle(Fonts(fontFamily)), Background(220, 10, 97, 1)), func() {
@@ -345,7 +360,7 @@ func StatusBar() {
 				Label(appData.status, FontSize(12), TextColor(150, 60, 32, 1))
 			}
 		} else {
-			Label("click to select · double-click or Enter to apply · Esc clears the filter", FontSize(11), TextColor(0, 0, 55, 1))
+			Label("click to select · double-click or Enter to apply · Esc clears the filter · "+quitHint(), FontSize(11), TextColor(0, 0, 55, 1))
 		}
 		Filler(1)
 		Label(appData.out.StackString(), FontSize(11), TextColor(0, 0, 45, 1))
