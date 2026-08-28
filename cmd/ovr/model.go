@@ -250,7 +250,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.openEditor()
 
 		case key.Matches(msg, m.keys.removeAction):
-			d, oa, err := m.out.Undo([]byte(m.out.String()))
+			d, oa, err := m.out.Undo(m.in)
 			if err != nil { // we should not have errors in the stack
 				m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
 				return m, nil

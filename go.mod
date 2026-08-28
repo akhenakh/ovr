@@ -12,6 +12,7 @@ require (
 	github.com/golang/geo v0.0.0-20260818125358-b200a1149890
 	github.com/peterstace/simplefeatures v0.59.0
 	github.com/stretchr/testify v1.12.1
+	go.hasen.dev/shirei v0.6.7
 	golang.design/x/clipboard v0.7.1-0.20230416133002-b50badc062a5
 	golang.org/x/text v0.41.0
 )
@@ -26,22 +27,30 @@ require (
 	github.com/akhenakh/maprender v0.0.0-20260824230925-ca8cfbf0bb25 // indirect
 	github.com/akhenakh/mvtgo v0.0.0-20260426004454-bc6e3d2e2fd2 // indirect
 	github.com/andybalholm/brotli v1.2.2 // indirect
+	github.com/anthonynsimon/bild v0.17.0 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/benoitkugler/textlayout v0.3.2 // indirect
 	github.com/benoitkugler/textprocessing v0.0.6 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20260525132238-948f4557a654 // indirect
 	github.com/charmbracelet/x/ansi v0.11.7 // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
+	github.com/cli/browser v1.3.0 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
+	github.com/dboslee/lru v0.0.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/ebitengine/purego v0.10.1 // indirect
+	github.com/fsnotify/fsnotify v1.10.1 // indirect
 	github.com/go-fonts/latin-modern v0.3.3 // indirect
 	github.com/go-text/typesetting v0.3.4 // indirect
+	github.com/godbus/dbus/v5 v5.2.2 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/jezek/xgb v1.1.1 // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.1 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.28 // indirect
@@ -58,6 +67,7 @@ require (
 	github.com/tdewolff/parse/v2 v2.8.16 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yuin/goldmark v1.8.5 // indirect
+	go.hasen.dev/generic v0.1.7 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/exp/shiny v0.0.0-20260820142414-ca536658362e // indirect
 	golang.org/x/image v0.45.0 // indirect

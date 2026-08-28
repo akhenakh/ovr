@@ -1,102 +1,72 @@
-//go:build ignore
-
 package main
 
 import (
 	"fmt"
+	"io"
+	"log"
 	"os"
 
-	"github.com/AllenDang/giu"
-	g "github.com/AllenDang/giu"
+	. "go.hasen.dev/shirei"
+	app "go.hasen.dev/shirei/app"
+
+	"golang.design/x/clipboard"
 )
-
-var (
-	editor                *g.CodeEditorWidget
-	statusMsg             string
-	disableGlobalShortcut bool // disable global shortcut while using editor or /
-	visibleWidgets        []g.Widget
-	smallFont             *g.FontInfo
-)
-
-func onClickMe() {
-	fmt.Println("\ueb28 Hello world!")
-}
-
-func onImSoCute() {
-	fmt.Println("Im sooooooo cute!!")
-}
-
-func loop() {
-	g.SingleWindow().RegisterKeyboardShortcuts(
-		// quit command
-		giu.WindowShortcut{Key: giu.KeyQ, Callback: func() {
-			if !disableGlobalShortcut {
-				os.Exit(0)
-			}
-		}},
-		// search command
-		giu.WindowShortcut{Key: giu.KeySlash, Callback: func() {
-			if !disableGlobalShortcut {
-				os.Exit(0)
-			}
-		}},
-		// view command
-		giu.WindowShortcut{Key: giu.KeyV, Callback: func() {
-			if !disableGlobalShortcut {
-				statusMsg = "ESC quit the editor"
-
-				visibleWidgets = []g.Widget{
-					g.Column(
-						g.Row(
-							g.Label(statusMsg).Font(smallFont),
-						),
-						editor,
-					),
-				}
-			}
-		}},
-		// close editor
-		giu.WindowShortcut{Key: giu.KeyEscape, Callback: func() {
-			if !disableGlobalShortcut {
-				os.Exit(0)
-			}
-		}},
-	).Layout(visibleWidgets...)
-}
 
 func main() {
-	wnd := g.NewMasterWindow("Hello world", 640, 480, g.MasterWindowFlagsFrameless)
+	// shirei's LargeText logs every scan to the std logger; keep stdout clean
+	log.SetOutput(io.Discard)
 
-	smallFont = g.Context.FontAtlas.AddFont("iosevskanerdfont.ttf", 15)
-
-	g.Context.FontAtlas.SetDefaultFont("iosevskanerdfont.ttf", 24)
-
-	editor = g.CodeEditor().
-		ShowWhitespaces(false).
-		TabSize(2).
-		Text("select * from greeting\nwhere date > current_timestamp\norder by date").
-		Border(true)
-
-	statusMsg = "q quit, v view"
-	visibleWidgets = []g.Widget{
-		g.Column(
-			g.Row(
-				g.Label(statusMsg).Font(smallFont),
-			),
-			g.ListBox("actionList", []string{"Jwt Parse", "Base64 Decode", "aaaaa", "bbbbb", "cccccc", "dddddd", "eeeeee", "ffffff", "aaaaa", "bbbbb", "cccccc", "dddddd", "eeeeee"}),
-			// g.Style().
-			// 	SetStyle(g.StyleVarFramePadding, 10, -30).
-			// 	SetFontSize(90).To(
-			// 	g.Button(string(0xe342)),
-			// ),
-			//
-			// 	g.Button("Click Me").OnClick(onClickMe),
-			// 	g.Button("I'm so cute").OnClick(onImSoCute),
-			// 	g.Button("salut").OnClick(func() { fmt.Println("yo") }),
-			// ),
-
-		),
+	if len(os.Args) >= 3 && os.Args[1] == "--png" {
+		input := []byte("POINT(-0.4539761 48.0930043)")
+		if len(os.Args) >= 4 {
+			b, err := os.ReadFile(os.Args[3])
+			if err != nil {
+				fmt.Println("read input file failed:", err)
+				os.Exit(1)
+			}
+			input = b
+		}
+		setInput(input)
+		selectFirst()
+		if err := RenderToPNG(os.Args[2], 1100, 760, RootView); err != nil {
+			fmt.Println("render failed:", err)
+			os.Exit(1)
+		}
+		return
 	}
 
-	wnd.Run(loop)
+	if len(os.Args) >= 3 && os.Args[1] == "--input" {
+		b, err := os.ReadFile(os.Args[2])
+		if err != nil {
+			fmt.Println("read input file failed:", err)
+			os.Exit(1)
+		}
+		setInput(b)
+	} else {
+		initClipboard()
+		if clipboardReady {
+			reloadInput(clipboard.Read(clipboard.FmtText))
+		}
+	}
+
+	app.SetupWindow("ovr", 1100, 760)
+	app.Run(RootView)
+}
+
+var clipboardReady bool
+
+func initClipboard() {
+	if err := clipboard.Init(); err != nil {
+		setInput([]byte("could not read the clipboard: " + err.Error()))
+		return
+	}
+	clipboardReady = true
+}
+
+func reloadClipboard() {
+	if !clipboardReady {
+		setStatus("clipboard not available", true)
+		return
+	}
+	reloadInput(clipboard.Read(clipboard.FmtText))
 }
