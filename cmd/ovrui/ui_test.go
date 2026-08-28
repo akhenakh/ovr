@@ -59,9 +59,14 @@ func TestApplyParams(t *testing.T) {
 
 	comma := findAction(t, action.TextFormat, "comma")
 	applyAction(comma)
+	selectAction(join) // applying cleared the selection; select again like the UI flow
+	appData.paramBuf[0] = "-"
 	applyAction(join)
 	if got := appData.out.String(); got != "a-b-c" {
 		t.Fatalf("output is %q, want a-b-c", got)
+	}
+	if appData.selected != nil {
+		t.Fatal("selection should be cleared after a successful apply")
 	}
 }
 

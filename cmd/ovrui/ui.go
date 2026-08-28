@@ -103,6 +103,10 @@ func applySelected() {
 
 func applyAction(a action.Action) {
 	if params := a.Parameters(); len(params) > 0 {
+		if len(appData.paramBuf) != len(params) {
+			setStatus(fmt.Sprintf("%s: missing parameters", a.Title()), true)
+			return
+		}
 		values := make([]any, len(params))
 		for i, p := range params {
 			v := strings.TrimSpace(appData.paramBuf[i])
@@ -142,6 +146,8 @@ func applyAction(a action.Action) {
 	}
 	appData.out = out
 	appData.tab = 0
+	appData.selected = nil
+	appData.paramBuf = nil
 	refreshActions()
 	setStatus("applied "+a.Title(), false)
 }
@@ -236,8 +242,16 @@ func ParamsPanel() {
 		for i, p := range a.Parameters() {
 			Container(Attrs(Row, CrossMid, Gap(6)), func() {
 				Label(p.Doc, FontSize(11), TextColor(0, 0, 45, 1))
-				TextInputExt(&appData.paramBuf[i], TextInputAttrs{Placeholder: p.Doc, MaxWidth: 160, NoAutoFocus: true})
+				TextInputExt(&appData.paramBuf[i], TextInputAttrs{
+					Placeholder: p.Doc,
+					MaxWidth:    160,
+					MaxLines:    1,
+					NoAutoFocus: i != 0,
+				})
 			})
+		}
+		if Button(NoIcon, "Apply") {
+			applySelected()
 		}
 	})
 }
