@@ -185,6 +185,11 @@ func quitHint() string {
 }
 
 func dataSummary() string {
+	if appData.out.Format == action.TextListFormat {
+		if l, ok := appData.out.Value.([]string); ok {
+			return fmt.Sprintf("%s · %d items", appData.out.Format.Name, len(l))
+		}
+	}
 	s := appData.out.String()
 	n := len(s)
 	size := fmt.Sprintf("%d B", n)
