@@ -21,14 +21,15 @@ jobs:
 
       - name: Release
         # goreleaser-cross bundles osxcross so cgo targets (ovrui on macOS)
-        # can be cross compiled from linux
+        # can be cross compiled from linux; libx11-dev is required to build
+        # the clipboard cgo dependency for ovrui
         run: |
           docker run --rm --privileged \
             -v "$PWD":/go/src/ovr \
             -w /go/src/ovr \
             -e GITHUB_TOKEN \
             ghcr.io/goreleaser/goreleaser-cross:v1.27.0 \
-            release --clean
+            bash -c "apt-get update -qq && apt-get install -y -qq libx11-dev && goreleaser release --clean"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

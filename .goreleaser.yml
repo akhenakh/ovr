@@ -38,12 +38,10 @@ builds:
       # osxcross from goreleaser-cross only supports darwin/arm64
       - goos: darwin
         goarch: amd64
-    overrides:
+      # linux/arm64 would need X11 cross headers (multiarch), skip it
       - goos: linux
         goarch: arm64
-        env:
-          - CC=aarch64-linux-gnu-gcc
-          - CXX=aarch64-linux-gnu-g++
+    overrides:
       - goos: darwin
         goarch: arm64
         env:

@@ -73,7 +73,9 @@ class ${CLASS} < Formula
     bin.install "ovr"
     # ovrui is bundled everywhere except the darwin x86_64 archive
     on_linux do
-      bin.install "ovrui"
+      on_intel do
+        bin.install "ovrui"
+      end
     end
     on_macos do
       on_arm do
