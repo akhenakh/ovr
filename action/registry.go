@@ -25,6 +25,7 @@ var all = []Action{
 	spaceTextListAction, pipeTextListAction, splitTextListAction,
 	commaTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction, jsonPrettifyAction,
 	textListFirstAction, textListLastAction, textListIndexAction, textListCountAction, unescapeTextAction, stripWhitespaceAction, pipeCommandAction,
+	parseCSVAction, tableSortColumnAction, tableToCSVAction,
 }
 
 func DefaultRegistry() *ActionRegistry {

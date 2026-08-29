@@ -27,6 +27,7 @@ var (
 	JSONFormat     = Format{"json", "j"}
 	GeoFormat      = Format{"geometry", "g"}
 	TextListFormat = Format{"textList", "l"}
+	TableFormat    = Format{"table", "r"}
 )
 
 type ActionParameter struct {
@@ -256,6 +257,15 @@ func inputFunc[I any](f Format) func(*Data) (I, error) {
 				return v, fmt.Errorf("input not a list of string")
 			}
 			*p = l
+		case *[][]string:
+			if f != TableFormat || d.Format != TableFormat {
+				return v, fmt.Errorf("input is not a table")
+			}
+			t, ok := d.Value.([][]string)
+			if !ok {
+				return v, fmt.Errorf("input not a table")
+			}
+			*p = t
 		case *time.Time:
 			if f != TimeFormat || d.Format != TimeFormat {
 				return v, fmt.Errorf("input is not a time")
@@ -294,6 +304,11 @@ func outputFunc[O any](f Format) func(O, Action, *Data) (*Data, error) {
 				return nil, fmt.Errorf("%s is not a valid output format for a text list", f.Name)
 			}
 			return d.StoreTextListValue(*p, a), nil
+		case *[][]string:
+			if f != TableFormat {
+				return nil, fmt.Errorf("%s is not a valid output format for a table", f.Name)
+			}
+			return d.StoreTableValue(*p, a), nil
 		case *time.Time:
 			if f != TimeFormat {
 				return nil, fmt.Errorf("%s is not a valid output format for time", f.Name)

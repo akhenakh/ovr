@@ -2,12 +2,14 @@ package action
 
 import (
 	"bytes"
+	"cmp"
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
+	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -15,6 +17,7 @@ import (
 	"hash/crc32"
 	"io"
 	"os/exec"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -543,6 +546,82 @@ var stripWhitespaceAction = New(Definition[[]byte, []byte]{
 	Func: func(a Action, in []byte) ([]byte, error) {
 		r := strings.NewReplacer(" ", "", "\r", "", "\n", "", "\t", "", "\f", "")
 		return []byte(r.Replace(string(in))), nil
+	},
+})
+
+var parseCSVAction = New(Definition[[]byte, [][]string]{
+	Doc:          "Parse CSV text input into a table of rows",
+	Names:        []string{"csv"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TableFormat,
+	Func: func(a Action, in []byte) ([][]string, error) {
+		r := csv.NewReader(bytes.NewReader(in))
+		r.FieldsPerRecord = -1
+		r.ReuseRecord = false
+		t, err := r.ReadAll()
+		if err != nil {
+			return nil, err
+		}
+		if len(t) == 0 {
+			return nil, errors.New("no CSV records found")
+		}
+		return t, nil
+	},
+})
+
+var tableSortColumnAction = New(Definition[[][]string, [][]string]{
+	Doc:          "Sort table rows by the column index parameter",
+	Names:        []string{"sortcol"},
+	Type:         TransformAction,
+	InputFormat:  TableFormat,
+	OutputFormat: TableFormat,
+	Parameters:   []ActionParameter{{IntParameter, "the column index to sort by"}},
+	Func: func(a Action, in [][]string) ([][]string, error) {
+		p, ok := a.InputParameters()[0].(int)
+		if !ok {
+			return nil, fmt.Errorf("sortcol parameter is not an int")
+		}
+		if p < 0 {
+			return nil, fmt.Errorf("column index is negative")
+		}
+
+		out := make([][]string, len(in))
+		copy(out, in)
+
+		for _, r := range out {
+			if p > len(r)-1 {
+				return nil, fmt.Errorf("column index %d is out of row limits", p)
+			}
+		}
+
+		slices.SortStableFunc(out, func(x, y []string) int {
+			xf, xerr := strconv.ParseFloat(x[p], 64)
+			yf, yerr := strconv.ParseFloat(y[p], 64)
+			if xerr == nil && yerr == nil {
+				return cmp.Compare(xf, yf)
+			}
+			return strings.Compare(x[p], y[p])
+		})
+
+		return out, nil
+	},
+})
+
+var tableToCSVAction = New(Definition[[][]string, []byte]{
+	Doc:          "Write a table as CSV text",
+	Names:        []string{"tocsv"},
+	Type:         TransformAction,
+	InputFormat:  TableFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in [][]string) ([]byte, error) {
+		var b bytes.Buffer
+		w := csv.NewWriter(&b)
+		if err := w.WriteAll(in); err != nil {
+			return nil, err
+		}
+		w.Flush()
+		return b.Bytes(), nil
 	},
 })
 
