@@ -20,12 +20,17 @@ var all = []Action{
 	upperAction, lowerAction, titleAction, trimSpaceAction, quoteAction, unquoteAction,
 	md5HashAction, sha1HashAction, sha256HashAction, sha512HashAction, crc32HashAction, hmacSha256Action,
 	toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
-	parseJSONDateStringAction, epochTimeAction,
-	estTimeAction, etTimeAction, utcTimeAction, isoTimeAction, timeEpochAction,
+	parseJSONDateStringAction, epochTimeAction, addDurationTimeAction,
+	estTimeAction, etTimeAction, utcTimeAction, isoTimeAction, toJSONDateStringAction, timeEpochAction,
 	spaceTextListAction, pipeTextListAction, splitTextListAction,
 	commaTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction, jsonPrettifyAction,
+	textListSortAction, textListReverseAction,
 	textListFirstAction, textListLastAction, textListIndexAction, textListCountAction, unescapeTextAction, stripWhitespaceAction, pipeCommandAction,
 	parseCSVAction, tableSortColumnAction, tableToCSVAction,
+}
+
+func init() {
+	all = slices.Concat(all, timezoneActions)
 }
 
 func DefaultRegistry() *ActionRegistry {

@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -198,7 +199,7 @@ var parseJSONDateStringAction = New(Definition[[]byte, time.Time]{
 	InputFormat:  TextFormat,
 	OutputFormat: TimeFormat,
 	Func: func(a Action, in []byte) (time.Time, error) {
-		return time.Parse("2006-01-02T15:04:05Z0700", string(in))
+		return time.Parse(time.RFC3339, string(in))
 	},
 })
 
@@ -265,41 +266,48 @@ var toHexStringAction = New(Definition[[]byte, []byte]{
 	},
 })
 
-var estTimeAction = New(Definition[time.Time, time.Time]{
-	Doc:          "Change time to EST timezone",
-	Names:        []string{"est"},
-	Type:         TransformAction,
-	InputFormat:  TimeFormat,
-	OutputFormat: TimeFormat,
-	Func: func(a Action, in time.Time) (time.Time, error) {
-		est, _ := time.LoadLocation("EST")
-		return in.In(est), nil
-	},
-})
+// newTzTimeAction builds a timezone conversion action for the given IANA location
+func newTzTimeAction(name, locName string) Action {
+	return New(Definition[time.Time, time.Time]{
+		Doc:          "Change time to " + name + " timezone (" + locName + ")",
+		Names:        []string{name},
+		Type:         TransformAction,
+		InputFormat:  TimeFormat,
+		OutputFormat: TimeFormat,
+		Func: func(a Action, in time.Time) (time.Time, error) {
+			loc, err := time.LoadLocation(locName)
+			if err != nil {
+				return time.Time{}, fmt.Errorf("unknown timezone %s: %w", locName, err)
+			}
+			return in.In(loc), nil
+		},
+	})
+}
 
-var etTimeAction = New(Definition[time.Time, time.Time]{
-	Doc:          "Change time to ET timezone",
-	Names:        []string{"et"},
-	Type:         TransformAction,
-	InputFormat:  TimeFormat,
-	OutputFormat: TimeFormat,
-	Func: func(a Action, in time.Time) (time.Time, error) {
-		est, _ := time.LoadLocation("ET")
-		return in.In(est), nil
-	},
-})
+var estTimeAction = newTzTimeAction("est", "EST")
+var etTimeAction = newTzTimeAction("et", "America/New_York")
+var utcTimeAction = newTzTimeAction("utc", "UTC")
 
-var utcTimeAction = New(Definition[time.Time, time.Time]{
-	Doc:          "Change time to UTC timezone",
-	Names:        []string{"utc"},
-	Type:         TransformAction,
-	InputFormat:  TimeFormat,
-	OutputFormat: TimeFormat,
-	Func: func(a Action, in time.Time) (time.Time, error) {
-		est, _ := time.LoadLocation("UTC")
-		return in.In(est), nil
-	},
-})
+var timezoneActions = []Action{
+	newTzTimeAction("pt", "America/Los_Angeles"),
+	newTzTimeAction("pst", "America/Los_Angeles"),
+	newTzTimeAction("mst", "America/Denver"),
+	newTzTimeAction("cst", "America/Chicago"),
+	newTzTimeAction("ct", "America/Chicago"),
+	newTzTimeAction("brt", "America/Sao_Paulo"),
+	newTzTimeAction("gmt", "Europe/London"),
+	newTzTimeAction("cet", "Europe/Paris"),
+	newTzTimeAction("eet", "Europe/Athens"),
+	newTzTimeAction("msk", "Europe/Moscow"),
+	newTzTimeAction("ist", "Asia/Kolkata"),
+	newTzTimeAction("sgt", "Asia/Singapore"),
+	newTzTimeAction("hkt", "Asia/Hong_Kong"),
+	newTzTimeAction("jst", "Asia/Tokyo"),
+	newTzTimeAction("kst", "Asia/Seoul"),
+	newTzTimeAction("aest", "Australia/Sydney"),
+	newTzTimeAction("nzst", "Pacific/Auckland"),
+	newTzTimeAction("hst", "Pacific/Honolulu"),
+}
 
 var isoTimeAction = New(Definition[time.Time, []byte]{
 	Doc:          "time to ISO RFC3339 text",
@@ -309,6 +317,109 @@ var isoTimeAction = New(Definition[time.Time, []byte]{
 	OutputFormat: TextFormat,
 	Func: func(a Action, in time.Time) ([]byte, error) {
 		return []byte(in.Format(time.RFC3339)), nil
+	},
+})
+
+// parseDuration parses durations like Go time.ParseDuration (1s, 2h30m, 100ms)
+// and additionally days (2d) and weeks (3w). A leading - or per-segment
+// negative values subtract time.
+func parseDuration(s string) (time.Duration, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return 0, errors.New("empty duration")
+	}
+
+	neg := false
+	switch s[0] {
+	case '-':
+		neg = true
+		s = s[1:]
+	case '+':
+		s = s[1:]
+	}
+
+	var total time.Duration
+	i := 0
+	for i < len(s) {
+		start := i
+		for i < len(s) && (s[i] >= '0' && s[i] <= '9' || s[i] == '.') {
+			i++
+		}
+		if start == i {
+			return 0, fmt.Errorf("invalid duration %q", s)
+		}
+		num, err := strconv.ParseFloat(s[start:i], 64)
+		if err != nil {
+			return 0, fmt.Errorf("invalid duration %q: %w", s, err)
+		}
+
+		useg := i
+		for i < len(s) && !unicode.IsDigit(rune(s[i])) && s[i] != '.' {
+			i++
+		}
+		unit := s[useg:i]
+		if unit == "" {
+			return 0, fmt.Errorf("missing unit in duration %q", s)
+		}
+
+		var d time.Duration
+		switch unit {
+		case "ns":
+			d = time.Duration(num * float64(time.Nanosecond))
+		case "us", "µs":
+			d = time.Duration(num * float64(time.Microsecond))
+		case "ms":
+			d = time.Duration(num * float64(time.Millisecond))
+		case "s":
+			d = time.Duration(num * float64(time.Second))
+		case "m":
+			d = time.Duration(num * float64(time.Minute))
+		case "h":
+			d = time.Duration(num * float64(time.Hour))
+		case "d":
+			d = time.Duration(num * 24 * float64(time.Hour))
+		case "w":
+			d = time.Duration(num * 7 * 24 * float64(time.Hour))
+		default:
+			return 0, fmt.Errorf("unknown unit %q in duration %q", unit, s)
+		}
+		total += d
+	}
+
+	if neg {
+		total = -total
+	}
+	return total, nil
+}
+
+var addDurationTimeAction = New(Definition[time.Time, time.Time]{
+	Doc:          "Add a duration to time, accepts Go durations like 1s, 2h30m and days like 2d, negative values subtract",
+	Names:        []string{"adddur"},
+	Type:         TransformAction,
+	InputFormat:  TimeFormat,
+	OutputFormat: TimeFormat,
+	Parameters:   []ActionParameter{{StringParameter, "duration to add, e.g. 1s, 2h30m, 2d, negative to subtract"}},
+	Func: func(a Action, in time.Time) (time.Time, error) {
+		p, ok := a.InputParameters()[0].(string)
+		if !ok {
+			return time.Time{}, fmt.Errorf("adddur parameter is not a string")
+		}
+		d, err := parseDuration(p)
+		if err != nil {
+			return time.Time{}, err
+		}
+		return in.Add(d), nil
+	},
+})
+
+var toJSONDateStringAction = New(Definition[time.Time, []byte]{
+	Doc:          "time to JSON ISO 8601 date string",
+	Names:        []string{"tojsondate"},
+	Type:         TransformAction,
+	InputFormat:  TimeFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in time.Time) ([]byte, error) {
+		return []byte(in.Format(time.RFC3339Nano)), nil
 	},
 })
 
@@ -471,6 +582,34 @@ var textListCharJoinAction = New(Definition[[]string, []byte]{
 			return nil, fmt.Errorf("join parameter is not a string")
 		}
 		return []byte(strings.Join(in, p)), nil
+	},
+})
+
+var textListSortAction = New(Definition[[]string, []string]{
+	Doc:          "Sort a list alphabetically",
+	Names:        []string{"sort"},
+	Type:         TransformAction,
+	InputFormat:  TextListFormat,
+	OutputFormat: TextListFormat,
+	Func: func(a Action, in []string) ([]string, error) {
+		out := make([]string, len(in))
+		copy(out, in)
+		slices.Sort(out)
+		return out, nil
+	},
+})
+
+var textListReverseAction = New(Definition[[]string, []string]{
+	Doc:          "Reverse the order of a list",
+	Names:        []string{"reverse"},
+	Type:         TransformAction,
+	InputFormat:  TextListFormat,
+	OutputFormat: TextListFormat,
+	Func: func(a Action, in []string) ([]string, error) {
+		out := make([]string, len(in))
+		copy(out, in)
+		slices.Reverse(out)
+		return out, nil
 	},
 })
 
