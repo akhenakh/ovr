@@ -30,7 +30,7 @@ jobs:
             -e GITHUB_TOKEN \
             --entrypoint bash \
             ghcr.io/goreleaser/goreleaser-cross:v1.27.0 \
-            -c "apt-get update -qq && apt-get install -y -qq libx11-dev && goreleaser release --clean"
+            -c "git config --global --add safe.directory /go/src/ovr && apt-get update -qq && apt-get install -y -qq libx11-dev && goreleaser release --clean"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
