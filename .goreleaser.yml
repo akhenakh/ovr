@@ -47,6 +47,10 @@ builds:
         env:
           - CC=oa64-clang
           - CXX=oa64-clang++
+          # Go's darwin/arm64 objects target macOS 13; without this the
+          # linker defaults to 11.0 and fails with undefined
+          # ___isPlatformVersionAtLeast
+          - MACOSX_DEPLOYMENT_TARGET=13.0
 
 archives:
   - id: default
