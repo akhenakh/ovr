@@ -57,6 +57,11 @@ class ${CLASS} < Formula
     on_arm do
       url "https://github.com/${REPO}/releases/download/${TAG}/${BIN}_Darwin_arm64.tar.gz"
       sha256 "${DARWIN_ARM64}"
+      resource "ovrui" do
+        version "${TAG}"
+        url "https://github.com/${REPO}/releases/download/${TAG}/${UIBIN}_Darwin_arm64.tar.gz"
+        sha256 "${UI_DARWIN_ARM64}"
+      end
     end
     on_intel do
       url "https://github.com/${REPO}/releases/download/${TAG}/${BIN}_Darwin_x86_64.tar.gz"
@@ -68,16 +73,6 @@ class ${CLASS} < Formula
     on_arm do
       url "https://github.com/${REPO}/releases/download/${TAG}/${BIN}_Linux_arm64.tar.gz"
       sha256 "${LINUX_ARM64}"
-    end
-    on_intel do
-      url "https://github.com/${REPO}/releases/download/${TAG}/${BIN}_Linux_x86_64.tar.gz"
-      sha256 "${LINUX_AMD64}"
-    end
-  end
-
-  # ovrui ships in its own archives, as a resource
-  on_linux do
-    on_arm do
       resource "ovrui" do
         version "${TAG}"
         url "https://github.com/${REPO}/releases/download/${TAG}/${UIBIN}_Linux_arm64.tar.gz"
@@ -85,6 +80,8 @@ class ${CLASS} < Formula
       end
     end
     on_intel do
+      url "https://github.com/${REPO}/releases/download/${TAG}/${BIN}_Linux_x86_64.tar.gz"
+      sha256 "${LINUX_AMD64}"
       resource "ovrui" do
         version "${TAG}"
         url "https://github.com/${REPO}/releases/download/${TAG}/${UIBIN}_Linux_x86_64.tar.gz"
@@ -93,25 +90,12 @@ class ${CLASS} < Formula
     end
   end
 
-  on_macos do
-    on_arm do
-      resource "ovrui" do
-        version "${TAG}"
-        url "https://github.com/${REPO}/releases/download/${TAG}/${UIBIN}_Darwin_arm64.tar.gz"
-        sha256 "${UI_DARWIN_ARM64}"
-      end
-    end
-  end
-
   def install
     bin.install "ovr"
-    on_linux do
+    if OS.mac? && Hardware::CPU.arm?
       resource("ovrui").stage { bin.install "ovrui" }
-    end
-    on_macos do
-      on_arm do
-        resource("ovrui").stage { bin.install "ovrui" }
-      end
+    elsif OS.linux?
+      resource("ovrui").stage { bin.install "ovrui" }
     end
   end
 end
