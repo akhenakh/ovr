@@ -50,9 +50,6 @@ builds:
           # linker defaults to 11.0 and fails with undefined
           # ___isPlatformVersionAtLeast
           - MACOSX_DEPLOYMENT_TARGET=13.0
-          # osxcross in the image lacks compiler-rt builtins, resolve the
-          # availability check symbol dynamically from libSystem instead
-          - CGO_LDFLAGS=-Wl,-U,___isPlatformVersionAtLeast
 
 archives:
   # separate archives per build: goreleaser requires the same binary count
