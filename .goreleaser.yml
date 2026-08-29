@@ -19,10 +19,42 @@ builds:
       - amd64
       - arm64
 
+  # ovrui's macOS backend (shirei cocoabackend) requires cgo, cross compiled
+  # with the osxcross toolchain from goreleaser-cross (see release.yml)
+  - id: ovrui
+    main: ./cmd/ovrui
+    binary: ovrui
+    env:
+      - CGO_ENABLED=1
+    flags:
+      - -trimpath
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      # osxcross from goreleaser-cross only supports darwin/arm64
+      - goos: darwin
+        goarch: amd64
+    overrides:
+      - goos: linux
+        goarch: arm64
+        env:
+          - CC=aarch64-linux-gnu-gcc
+          - CXX=aarch64-linux-gnu-g++
+      - goos: darwin
+        goarch: arm64
+        env:
+          - CC=oa64-clang
+          - CXX=oa64-clang++
+
 archives:
   - id: default
     ids:
       - ovr
+      - ovrui
     formats: ['tar.gz']
     name_template: >-
       {{ .ProjectName }}_

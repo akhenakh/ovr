@@ -70,7 +70,16 @@ class ${CLASS} < Formula
   end
 
   def install
-    bin.install "${BIN}"
+    bin.install "ovr"
+    # ovrui is bundled everywhere except the darwin x86_64 archive
+    on_linux do
+      bin.install "ovrui"
+    end
+    on_macos do
+      on_arm do
+        bin.install "ovrui"
+      end
+    end
   end
 end
 EOF

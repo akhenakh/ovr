@@ -19,17 +19,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-
       - name: Release
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          distribution: goreleaser
-          version: latest
-          args: release --clean
+        # goreleaser-cross bundles osxcross so cgo targets (ovrui on macOS)
+        # can be cross compiled from linux
+        run: |
+          docker run --rm --privileged \
+            -v "$PWD":/go/src/ovr \
+            -w /go/src/ovr \
+            -e GITHUB_TOKEN \
+            ghcr.io/goreleaser/goreleaser-cross:v1.27.0 \
+            release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
