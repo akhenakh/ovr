@@ -28,8 +28,9 @@ jobs:
             -v "$PWD":/go/src/ovr \
             -w /go/src/ovr \
             -e GITHUB_TOKEN \
+            --entrypoint bash \
             ghcr.io/goreleaser/goreleaser-cross:v1.27.0 \
-            bash -c "apt-get update -qq && apt-get install -y -qq libx11-dev && goreleaser release --clean"
+            -c "apt-get update -qq && apt-get install -y -qq libx11-dev && goreleaser release --clean"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
