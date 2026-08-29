@@ -534,6 +534,18 @@ var unescapeTextAction = New(Definition[[]byte, []byte]{
 	},
 })
 
+var stripWhitespaceAction = New(Definition[[]byte, []byte]{
+	Doc:          "Removes all spaces, carriage returns, line feeds, tabs and form feeds from input",
+	Names:        []string{"strip"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in []byte) ([]byte, error) {
+		r := strings.NewReplacer(" ", "", "\r", "", "\n", "", "\t", "", "\f", "")
+		return []byte(r.Replace(string(in))), nil
+	},
+})
+
 var pipeCommandAction = New(Definition[[]byte, []byte]{
 	Doc:          "Pipe the input into a shell command, the command receives the input on stdin, output is the command stdout",
 	Names:        []string{"exec", "sh"},

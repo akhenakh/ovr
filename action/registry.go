@@ -24,7 +24,7 @@ var all = []Action{
 	estTimeAction, etTimeAction, utcTimeAction, isoTimeAction, timeEpochAction,
 	spaceTextListAction, pipeTextListAction, splitTextListAction,
 	commaTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction, jsonPrettifyAction,
-	textListFirstAction, textListLastAction, textListIndexAction, textListCountAction, unescapeTextAction, pipeCommandAction,
+	textListFirstAction, textListLastAction, textListIndexAction, textListCountAction, unescapeTextAction, stripWhitespaceAction, pipeCommandAction,
 }
 
 func DefaultRegistry() *ActionRegistry {
