@@ -2,7 +2,14 @@
 
 A CLI tool to pipe anything into and apply transformations with an advanced UI.
 
-## Build
+## Install
+
+With [Homebrew](https://brew.sh) (Linux and macOS, formulas from [akhenakh/homebrew-tap](https://github.com/akhenakh/homebrew-tap)):
+```sh
+brew install akhenakh/tap/ovr
+```
+
+Or from source (requires Go 1.27):
 ```sh
 go build -o ovr ./cmd/ovr
 ```
@@ -11,6 +18,30 @@ Enable geo features.
 ```sh
 go build -tags geo -o ovr ./cmd/ovr
 ```
+
+## Usage
+
+```sh
+ovr [flags]
+```
+
+By default ovr reads the clipboard. If the clipboard is unavailable
+(eg. running over SSH), use an alternative input:
+
+- `-s` read from stdin, eg. `cat data.txt | ovr -s`
+- `-f <filename>` read from a file
+
+Flags:
+
+- `-s` use stdin as input data
+- `-f <filename>` read input from a file
+- `-r` raw output, only print the final result
+- `-o <filename>` write the output to a file
+- `-debug` log to debug.log
+
+On exit, ovr prints the applied action chain, eg. `Split(" "),Index(2),Upper`,
+followed by the result.
+
 ## Features
 - [X] Fuzzy search for block names
 - [X] Apply actions, cancel actions using backspace
@@ -21,21 +52,23 @@ go build -tags geo -o ovr ./cmd/ovr
 - [ ] Create scripts using TUI, replay scripts with simple CLI options
 
 ## Inputs Outputs
-- from/to clipboard
-- stdin
+- [X] from/to clipboard (with a fallback message and `-s`/`-f` hint when unavailable, eg. over SSH)
+- [X] stdin (`-s`)
+- [X] file (`-f <filename>`)
+- [X] output to file (`-o <filename>`)
 - editor https://github.com/charmbracelet/bubbletea/tree/master/examples/textarea
-- file?
 
 ## Format
 
-- Text
-- Lines
-- CSV
+- [X] Text
+- [X] Lines (text lists)
+- [X] CSV (table of rows)
 - JSON
 - YAML
 - TOML
 - Images
-- Geometry (WKT input like `POINT(-0.4539761 48.0930043)` is auto-detected
+- [X] Time
+- [X] Geometry (WKT input like `POINT(-0.4539761 48.0930043)` is auto-detected
   and parsed, geo actions are offered immediately)
 
 ## Values Types
@@ -57,24 +90,29 @@ go build -tags geo -o ovr ./cmd/ovr
 - [X] Title
 - [ ] CamelCase
 - [X] encoding from/to (b64, hex ...)
-- [X] hashes
-- [ ] count inputs
-- [X] time parse transform, epoch 
-- [ ] Time timezone, not completed
-- [ ] duration add substract
+- [X] hashes (md5, sha1, sha256, sha512, crc32, hmac)
+- [X] count inputs
+- [X] split text into a list with any separator (`split`), by comma, space, pipe
+- [X] list actions: sort, reverse, first, last, index, count, join
+- [X] time parse transform, epoch
+- [X] date parsing: ISO 8601/JSON dates, Go time strings (`date`)
+- [X] time to ISO, epoch, JSON date string
+- [X] timezones: est, et, utc, pt, mst, cst, brt, gmt, cet, eet, msk, ist, sgt, hkt, jst, kst, aest, nzst, hst
+- [X] duration add/substract, Go durations like `1s`, `2h30m`, days `2d`, weeks `3w`, negative to substract (`adddur`)
 - [X] escape unescape
-- [ ] reformat input, prettifie
+- [X] reformat input, prettifie
 - [X] JSON prettify
 - [X] JWT decode
 - [ ] JWT Validate
 - [ ] known payloads (AWS...), logs severity, golang stack, java stack...
 - [X] JSON Minify 
-- [ ] sort by a column/property
+- [X] CSV: parse into a table (`csv`), sort by a column (`sortcol`), output as csv (`tocsv`)
+- [X] strip all whitespace (`strip`)
 - [ ] sort yaml
 - [ ] Add/Set value
 - [ ] conversion (json, csv, yaml, toml)
 - [ ] output to a configurable filename, xxx-%Y%m%d.txt
-- [ ] execute a shell command
+- [X] execute a shell command, input piped to stdin (`exec`)
 - [ ] Colors, RGBtoHex, js names to colors
 - [X] WKB/WKT/GeoJSON (geometry)
 - [X] Geometry: area, centroid, timezone, 
@@ -86,7 +124,6 @@ go build -tags geo -o ovr ./cmd/ovr
 - [ ] URL
 - [ ] Source Code, format, colorize
 - [ ] Save to file
-- [ ] crc32
 
 ## Filter 
 - [ ] dedup from a list

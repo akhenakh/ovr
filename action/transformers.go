@@ -192,14 +192,26 @@ var fromBase64StringAction = New(Definition[[]byte, []byte]{
 	},
 })
 
-var parseJSONDateStringAction = New(Definition[[]byte, time.Time]{
-	Doc:          "Parse JSON ISO 8601 from input",
-	Names:        []string{"jsondate"},
+var parseDateStringAction = New(Definition[[]byte, time.Time]{
+	Doc:          "Parse a date from input, supports ISO 8601/JSON dates and Go time strings",
+	Names:        []string{"date", "jsondate"},
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
 	OutputFormat: TimeFormat,
 	Func: func(a Action, in []byte) (time.Time, error) {
-		return time.Parse(time.RFC3339, string(in))
+		s := strings.TrimSpace(string(in))
+		for _, layout := range []string{
+			time.RFC3339Nano,
+			time.DateTime + " -0700 MST", // Go time.String() format, e.g. 2026-08-28 21:59:57 -0400 EDT
+			time.DateTime + " -0700",
+			time.DateTime,
+			time.DateOnly,
+		} {
+			if t, err := time.Parse(layout, s); err == nil {
+				return t, nil
+			}
+		}
+		return time.Time{}, fmt.Errorf("can't parse %q as a date", s)
 	},
 })
 
