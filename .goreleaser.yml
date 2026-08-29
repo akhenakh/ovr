@@ -20,12 +20,13 @@ builds:
       - arm64
 
   # ovrui's macOS backend (shirei cocoabackend) requires cgo, cross compiled
-  # with the osxcross toolchain from goreleaser-cross (see release.yml)
+  # with the osxcross toolchain from goreleaser-cross (see release.yml).
+  # linux builds are CGO-free; clipboard reports unavailable at runtime.
   - id: ovrui
     main: ./cmd/ovrui
     binary: ovrui
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     flags:
       - -trimpath
     goos:
@@ -38,13 +39,11 @@ builds:
       # osxcross from goreleaser-cross only supports darwin/arm64
       - goos: darwin
         goarch: amd64
-      # linux/arm64 would need X11 cross headers (multiarch), skip it
-      - goos: linux
-        goarch: arm64
     overrides:
       - goos: darwin
         goarch: arm64
         env:
+          - CGO_ENABLED=1
           - CC=oa64-clang
           - CXX=oa64-clang++
           # Go's darwin/arm64 objects target macOS 13; without this the
@@ -56,13 +55,24 @@ builds:
           - CGO_LDFLAGS=-Wl,-U,___isPlatformVersionAtLeast
 
 archives:
-  - id: default
-    ids:
+  # separate archives per build: goreleaser requires the same binary count
+  # in each archive and ovrui is not available on every ovr platform
+  - id: ovr
+    builds:
       - ovr
-      - ovrui
     formats: ['tar.gz']
     name_template: >-
       {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+
+  - id: ovrui
+    builds:
+      - ovrui
+    formats: ['tar.gz']
+    name_template: >-
+      ovrui_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}

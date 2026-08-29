@@ -31,7 +31,13 @@ DARWIN_ARM64="$(sha "${BIN}_Darwin_arm64.tar.gz")"
 LINUX_AMD64="$(sha "${BIN}_Linux_x86_64.tar.gz")"
 LINUX_ARM64="$(sha "${BIN}_Linux_arm64.tar.gz")"
 
-for v in DARWIN_AMD64 DARWIN_ARM64 LINUX_AMD64 LINUX_ARM64; do
+UIBIN="ovrui"
+UI_DARWIN_ARM64="$(sha "${UIBIN}_Darwin_arm64.tar.gz")"
+UI_LINUX_AMD64="$(sha "${UIBIN}_Linux_x86_64.tar.gz")"
+UI_LINUX_ARM64="$(sha "${UIBIN}_Linux_arm64.tar.gz")"
+
+for v in DARWIN_AMD64 DARWIN_ARM64 LINUX_AMD64 LINUX_ARM64 \
+         UI_DARWIN_ARM64 UI_LINUX_AMD64 UI_LINUX_ARM64; do
   if [[ -z "${!v}" ]]; then
     echo "error: missing checksum for ${v}" >&2
     exit 1
@@ -69,17 +75,42 @@ class ${CLASS} < Formula
     end
   end
 
+  # ovrui ships in its own archives, as a resource
+  on_linux do
+    on_arm do
+      resource "ovrui" do
+        version "${TAG}"
+        url "https://github.com/${REPO}/releases/download/${TAG}/${UIBIN}_Linux_arm64.tar.gz"
+        sha256 "${UI_LINUX_ARM64}"
+      end
+    end
+    on_intel do
+      resource "ovrui" do
+        version "${TAG}"
+        url "https://github.com/${REPO}/releases/download/${TAG}/${UIBIN}_Linux_x86_64.tar.gz"
+        sha256 "${UI_LINUX_AMD64}"
+      end
+    end
+  end
+
+  on_macos do
+    on_arm do
+      resource "ovrui" do
+        version "${TAG}"
+        url "https://github.com/${REPO}/releases/download/${TAG}/${UIBIN}_Darwin_arm64.tar.gz"
+        sha256 "${UI_DARWIN_ARM64}"
+      end
+    end
+  end
+
   def install
     bin.install "ovr"
-    # ovrui is bundled everywhere except the darwin x86_64 archive
     on_linux do
-      on_intel do
-        bin.install "ovrui"
-      end
+      resource("ovrui").stage { bin.install "ovrui" }
     end
     on_macos do
       on_arm do
-        bin.install "ovrui"
+        resource("ovrui").stage { bin.install "ovrui" }
       end
     end
   end
