@@ -278,49 +278,6 @@ var toHexStringAction = New(Definition[[]byte, []byte]{
 	},
 })
 
-// newTzTimeAction builds a timezone conversion action for the given IANA location
-func newTzTimeAction(name, locName string) Action {
-	return New(Definition[time.Time, time.Time]{
-		Doc:          "Change time to " + name + " timezone (" + locName + ")",
-		Names:        []string{name},
-		Type:         TransformAction,
-		InputFormat:  TimeFormat,
-		OutputFormat: TimeFormat,
-		Func: func(a Action, in time.Time) (time.Time, error) {
-			loc, err := time.LoadLocation(locName)
-			if err != nil {
-				return time.Time{}, fmt.Errorf("unknown timezone %s: %w", locName, err)
-			}
-			return in.In(loc), nil
-		},
-	})
-}
-
-var estTimeAction = newTzTimeAction("est", "EST")
-var etTimeAction = newTzTimeAction("et", "America/New_York")
-var utcTimeAction = newTzTimeAction("utc", "UTC")
-
-var timezoneActions = []Action{
-	newTzTimeAction("pt", "America/Los_Angeles"),
-	newTzTimeAction("pst", "America/Los_Angeles"),
-	newTzTimeAction("mst", "America/Denver"),
-	newTzTimeAction("cst", "America/Chicago"),
-	newTzTimeAction("ct", "America/Chicago"),
-	newTzTimeAction("brt", "America/Sao_Paulo"),
-	newTzTimeAction("gmt", "Europe/London"),
-	newTzTimeAction("cet", "Europe/Paris"),
-	newTzTimeAction("eet", "Europe/Athens"),
-	newTzTimeAction("msk", "Europe/Moscow"),
-	newTzTimeAction("ist", "Asia/Kolkata"),
-	newTzTimeAction("sgt", "Asia/Singapore"),
-	newTzTimeAction("hkt", "Asia/Hong_Kong"),
-	newTzTimeAction("jst", "Asia/Tokyo"),
-	newTzTimeAction("kst", "Asia/Seoul"),
-	newTzTimeAction("aest", "Australia/Sydney"),
-	newTzTimeAction("nzst", "Pacific/Auckland"),
-	newTzTimeAction("hst", "Pacific/Honolulu"),
-}
-
 var isoTimeAction = New(Definition[time.Time, []byte]{
 	Doc:          "time to ISO RFC3339 text",
 	Names:        []string{"iso"},

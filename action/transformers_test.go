@@ -327,6 +327,31 @@ func TestAction_TimeTransform(t *testing.T) {
 			"2009-11-10 18:00:00 -0500 EST",
 			false,
 		},
+		{
+			// DST aware, summer is EDT
+			"et",
+			time.Date(2009, time.July, 10, 23, 0, 0, 0, time.UTC),
+			"2009-07-10 19:00:00 -0400 EDT",
+			false,
+		},
+		{
+			"pst",
+			time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
+			"2009-11-10 15:00:00 -0800 PST",
+			false,
+		},
+		{
+			"jst",
+			time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC),
+			"2009-11-11 08:00:00 +0900 JST",
+			false,
+		},
+		{
+			"cet",
+			time.Date(2009, time.July, 10, 23, 0, 0, 0, time.UTC),
+			"2009-07-11 01:00:00 +0200 CEST",
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.action, func(t *testing.T) {
@@ -337,6 +362,50 @@ func TestAction_TimeTransform(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, tt.want, got.String())
 			}
+		})
+	}
+}
+
+func TestAction_Tz(t *testing.T) {
+	r := NewRegistry()
+
+	a := r.MustActionByName(TimeFormat, "tz")
+	require.NoError(t, a.SetInputParameters("Asia/Tokyo"))
+	out, err := a.Transform(NewDataTime(time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)))
+	require.NoError(t, err)
+	tm, ok := out.Value.(time.Time)
+	require.True(t, ok)
+	require.Equal(t, "2009-11-11 08:00:00 +0900 JST", tm.String())
+
+	bad := r.MustActionByName(TimeFormat, "tz")
+	require.NoError(t, bad.SetInputParameters("Mars/Olympus"))
+	_, err = bad.Transform(NewDataTime(time.Now()))
+	require.Error(t, err)
+}
+
+func TestAction_TzCaseInsensitive(t *testing.T) {
+	r := NewRegistry()
+
+	tests := []struct {
+		param string
+		want  string
+	}{
+		{"america/montreal", "America/Montreal"},
+		{"AMERICA/NEW_YORK", "America/New_York"},
+		{"asia/kolkata", "Asia/Kolkata"},
+		{"australia/sydney", "Australia/Sydney"},
+		{"utc", "UTC"},
+		{"America/Argentina/Buenos_Aires", "America/Argentina/Buenos_Aires"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.param, func(t *testing.T) {
+			a := r.MustActionByName(TimeFormat, "tz")
+			require.NoError(t, a.SetInputParameters(tt.param))
+			out, err := a.Transform(NewDataTime(time.Now()))
+			require.NoError(t, err)
+			tm, ok := out.Value.(time.Time)
+			require.True(t, ok)
+			require.Equal(t, tt.want, tm.Location().String())
 		})
 	}
 }

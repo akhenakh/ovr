@@ -21,7 +21,7 @@ var all = []Action{
 	md5HashAction, sha1HashAction, sha256HashAction, sha512HashAction, crc32HashAction, hmacSha256Action,
 	toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
 	parseDateStringAction, epochTimeAction, addDurationTimeAction,
-	estTimeAction, etTimeAction, utcTimeAction, isoTimeAction, toJSONDateStringAction, timeEpochAction,
+	tzTimeAction, isoTimeAction, toJSONDateStringAction, timeEpochAction,
 	spaceTextListAction, pipeTextListAction, splitTextListAction,
 	commaTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction, jsonPrettifyAction,
 	textListSortAction, textListReverseAction,
@@ -31,6 +31,18 @@ var all = []Action{
 
 func init() {
 	all = slices.Concat(all, timezoneActions)
+}
+
+// generatorActions ignore their input and can be applied to any data
+var generatorActions = []Action{uuidV4Action, uuidV7Action, nowTimeAction, repeatLastAction}
+
+// inputFormats is every format generator actions are registered for,
+// text list data already offers text to text actions so it is not needed there
+var inputFormats = []Format{TextFormat, BinFormat, TimeFormat, JSONFormat, GeoFormat}
+
+// rebinder is implemented by actions that can register for another input format
+type rebinder interface {
+	rebind(Format) Action
 }
 
 func DefaultRegistry() *ActionRegistry {
@@ -47,6 +59,16 @@ func NewRegistry() *ActionRegistry {
 	}
 
 	r.RegisterActions(cloneActions(all)...)
+
+	for _, a := range generatorActions {
+		rb, ok := a.(rebinder)
+		if !ok {
+			panic(fmt.Sprintf("generator action %s can't be registered for every format", a.Title()))
+		}
+		for _, f := range inputFormats {
+			r.RegisterAction(rb.rebind(f))
+		}
+	}
 
 	return r
 }
