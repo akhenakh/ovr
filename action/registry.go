@@ -17,7 +17,7 @@ var (
 )
 
 var all = []Action{
-	upperAction, lowerAction, titleAction, trimSpaceAction, quoteAction, unquoteAction,
+	upperAction, lowerAction, titleAction, trimSpaceAction, quoteAction, unquoteAction, calcAction,
 	md5HashAction, sha1HashAction, sha256HashAction, sha512HashAction, crc32HashAction, hmacSha256Action,
 	toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
 	parseDateStringAction, epochTimeAction, addDurationTimeAction,
@@ -34,7 +34,7 @@ func init() {
 }
 
 // generatorActions ignore their input and can be applied to any data
-var generatorActions = []Action{uuidV4Action, uuidV7Action, nowTimeAction, repeatLastAction}
+var generatorActions = []Action{uuidV4Action, uuidV7Action, nowTimeAction, repeatLastAction, newCalcAction}
 
 // inputFormats is every format generator actions are registered for,
 // text list data already offers text to text actions so it is not needed there

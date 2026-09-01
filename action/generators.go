@@ -12,6 +12,9 @@ type newAction[O any] struct {
 }
 
 func (a *newAction[O]) Transform(in *Data) (*Data, error) {
+	if len(a.params) != len(a.def.Parameters) {
+		return nil, fmt.Errorf("input parameters required for %s", a.Title())
+	}
 	out, err := a.def.Func(a, nil)
 	if err != nil {
 		return nil, err
@@ -71,6 +74,28 @@ var nowTimeAction = newGenerator(Definition[[]byte, time.Time]{
 })
 
 const maxRepeatCount = 10000
+
+// newCalcAction evaluates an expression parameter, the input data is ignored,
+// it allows starting a calculation from scratch without an input buffer
+var newCalcAction = newGenerator(Definition[[]byte, []byte]{
+	Doc:          "New calc, evaluate an arithmetic expression from scratch, e.g. 12 + 23",
+	Names:        []string{"newcalc"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Parameters:   []ActionParameter{{StringParameter, "expression to evaluate, e.g. 12 + 23"}},
+	Func: func(a Action, in []byte) ([]byte, error) {
+		p, ok := a.InputParameters()[0].(string)
+		if !ok {
+			return nil, fmt.Errorf("newcalc parameter is not a string")
+		}
+		v, err := evalCalc(p)
+		if err != nil {
+			return nil, err
+		}
+		return []byte(v), nil
+	},
+})
 
 // repeatAction re-applies the last applied action N times,
 // every result is collected in a text list.
