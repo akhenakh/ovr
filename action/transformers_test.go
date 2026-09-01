@@ -2,7 +2,6 @@ package action
 
 import (
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -282,28 +281,14 @@ func TestAction_TextTransform(t *testing.T) {
 func TestAction_TextTimeTransform(t *testing.T) {
 	r := NewRegistry()
 
-	os.Setenv("TZ", "Canada/Eastern")
+	got, err := r.TextTimeAction("jsondate", []byte("2012-04-23T18:25:43Z"))
+	require.NoError(t, err)
+	require.Equal(t, "2012-04-23 18:25:43 +0000 UTC", got.String())
 
-	tests := []struct {
-		action  string
-		in      string
-		want    string
-		wantErr bool
-	}{
-		{"jsondate", "2012-04-23T18:25:43Z", "2012-04-23 18:25:43 +0000 UTC", false},
-		{"epoch", "1257894000", "2009-11-10 18:00:00 -0500 EST", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.action, func(t *testing.T) {
-			got, err := r.TextTimeAction(tt.action, []byte(tt.in))
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				require.Equal(t, tt.want, got.String())
-			}
-		})
-	}
+	// epoch is parsed in the process local timezone, compare the instant instead
+	got, err = r.TextTimeAction("epoch", []byte("1257894000"))
+	require.NoError(t, err)
+	require.Equal(t, int64(1257894000), got.Unix())
 }
 
 func TestAction_TimeTransform(t *testing.T) {
