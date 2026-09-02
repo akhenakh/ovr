@@ -93,7 +93,7 @@ func (d *Data) Undo(in []byte) (*Data, Action, error) {
 
 func (d *Data) String() string {
 	switch d.Format {
-	case TextFormat:
+	case TextFormat, BinFormat:
 		return string(d.RawValue)
 	case TimeFormat:
 		t := d.Value.(time.Time)
@@ -111,6 +111,12 @@ func (d *Data) String() string {
 			rows[i] = strings.Join(r, ",")
 		}
 		return strings.Join(rows, "\n")
+	case TextListFormat:
+		l, ok := d.Value.([]string)
+		if !ok {
+			return fmt.Sprintf("%v", d.Value)
+		}
+		return strings.Join(l, "\n")
 	default:
 		return fmt.Sprintf("%v", d.Value)
 	}

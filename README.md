@@ -113,6 +113,7 @@ followed by the result.
 - [ ] conversion (json, csv, yaml, toml)
 - [ ] output to a configurable filename, xxx-%Y%m%d.txt
 - [X] execute a shell command, input piped to stdin (`exec`)
+- [X] edit the entry in $EDITOR, non text entries are converted to text first (`edit`)
 - [ ] Colors, RGBtoHex, js names to colors
 - [X] WKB/WKT/GeoJSON (geometry)
 - [X] Geometry: area, centroid, timezone, 

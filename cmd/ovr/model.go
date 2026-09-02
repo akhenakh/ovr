@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -212,6 +211,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width - h
 		m.height = msg.Height - v
 
+	case editorFinishedMsg:
+		if msg.err != nil {
+			m.list.NewStatusMessage(errorMessageStyle("Error " + msg.err.Error()))
+			return m, nil
+		}
+		if err := msg.a.SetInputParameters(string(msg.edited)); err != nil {
+			m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
+			return m, nil
+		}
+		out, err := msg.a.Transform(m.out)
+		if err != nil {
+			m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
+			return m, nil
+		}
+		m.setOutput(out)
+		m.list.NewStatusMessage(statusMessageStyle("Applying " + msg.a.Title()))
+		return m, nil
+
 	case tea.KeyPressMsg:
 		// returning from the map emitted image deletions, stop now that
 		// the terminal processed one
@@ -247,7 +264,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.state = detailState
 			return m, nil
 		case key.Matches(msg, m.keys.openEditor):
-			return m, m.openEditor()
+			if ea, ok := m.editActionForData(); ok {
+				return m, m.startEditor(ea)
+			}
+			m.list.NewStatusMessage(errorMessageStyle("Error no edit action available"))
+			return m, nil
 
 		case key.Matches(msg, m.keys.removeAction):
 			d, oa, err := m.out.Undo(m.in)
@@ -275,6 +296,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a, ok := m.list.SelectedItem().(action.Action)
 			if !ok {
 				break
+			}
+
+			// Editor actions are applied by the external editor flow,
+			// they suspend the program while the editor is running
+			if ea, ok := a.(action.Editor); ok {
+				return m, m.startEditor(ea)
 			}
 
 			if a.Interactive() {
@@ -332,17 +359,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
 				return m, nil
 			}
-			m.list.Title = fmt.Sprintf("%s: %s", out.Format.Name, strings.TrimRight(out.String(), "\r\n"))
-			m.out = out
-
-			m.list.ResetFilter()
-
-			actions := m.r.ActionsForData(m.out)
-			items := make([]list.Item, len(actions))
-			for i := 0; i < len(actions); i++ {
-				items[i] = actions[i]
-			}
-			m.list.SetItems(items)
+			m.setOutput(out)
 
 			m.list.NewStatusMessage(statusMessageStyle("Applying " + a.Title()))
 
@@ -419,17 +436,7 @@ func updateParams(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 					m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
 					return m, nil
 				}
-				m.list.Title = fmt.Sprintf("%s: %s", out.Format.Name, strings.TrimRight(out.String(), "\r\n"))
-				m.out = out
-
-				m.list.ResetFilter()
-
-				actions := m.r.ActionsForData(m.out)
-				items := make([]list.Item, len(actions))
-				for i := 0; i < len(actions); i++ {
-					items[i] = actions[i]
-				}
-				m.list.SetItems(items)
+				m.setOutput(out)
 
 				m.list.NewStatusMessage(statusMessageStyle("Applying " + a.Title()))
 
@@ -588,22 +595,39 @@ func (m model) View() tea.View {
 	return v
 }
 
-type editorFinishedMsg struct{ err error }
+type editorFinishedMsg struct {
+	a      action.Editor
+	edited []byte
+	err    error
+}
 
-func (m model) openEditor() tea.Cmd {
+// editActionForData returns the edit action for the current output format
+func (m model) editActionForData() (action.Editor, bool) {
+	a, ok := m.r.ActionByName(m.out.Format, "edit")
+	if !ok {
+		a, ok = m.r.ActionByName(action.TextFormat, "edit")
+	}
+	if !ok {
+		return nil, false
+	}
+	ea, ok := a.(action.Editor)
+	return ea, ok
+}
+
+// startEditor opens the entry content in $EDITOR, the edited content is
+// applied with the edit action when the editor exits
+func (m model) startEditor(ea action.Editor) tea.Cmd {
 	f, err := os.CreateTemp(os.TempDir(), "ovr")
 	if err != nil {
-		log.Println(err)
-		// TODO: not showing up
 		return m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
 	}
-	defer f.Close()
-	defer os.Remove(f.Name())
-	if _, err := f.Write(m.out.RawValue); err != nil {
-		log.Println(err)
-		// TODO: not showing up
+
+	if _, err := f.Write([]byte(ea.EditContent(m.out))); err != nil {
+		f.Close()
+		os.Remove(f.Name())
 		return m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
 	}
+	f.Close()
 
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
@@ -611,11 +635,25 @@ func (m model) openEditor() tea.Cmd {
 	}
 	c := exec.Command(editor, f.Name()) //nolint:gosec
 	return tea.ExecProcess(c, func(err error) tea.Msg {
+		defer os.Remove(f.Name())
 		if err != nil {
-			log.Println(err)
-			// TODO: not showing up
-			return m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
+			return editorFinishedMsg{err: err}
 		}
-		return nil
+		b, err := os.ReadFile(f.Name())
+		return editorFinishedMsg{a: ea, edited: b, err: err}
 	})
+}
+
+// setOutput stores the transformation output and refreshes the action list
+func (m *model) setOutput(out *action.Data) {
+	m.out = out
+	m.list.Title = fmt.Sprintf("%s: %s", out.Format.Name, strings.TrimRight(out.String(), "\r\n"))
+	m.list.ResetFilter()
+
+	actions := m.r.ActionsForData(m.out)
+	items := make([]list.Item, len(actions))
+	for i := 0; i < len(actions); i++ {
+		items[i] = actions[i]
+	}
+	m.list.SetItems(items)
 }

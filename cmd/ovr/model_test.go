@@ -35,3 +35,33 @@ func TestActionsRenderInList(t *testing.T) {
 		t.Fatal("no actions rendered in the view")
 	}
 }
+
+// The edit action must be offered for the initial data and applying the
+// editor result must store it as the new output.
+func TestEditActionApplied(t *testing.T) {
+	m := newModel([]byte("hello"))
+
+	var found bool
+	for _, it := range m.list.Items() {
+		if a, ok := it.(action.Action); ok && a.Names()[0] == "edit" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("edit action is not in the list")
+	}
+
+	ea, ok := m.editActionForData()
+	if !ok {
+		t.Fatal("no edit action for text data")
+	}
+
+	newM, _ := m.Update(editorFinishedMsg{a: ea, edited: []byte("edited text")})
+	mm := newM.(model)
+	if string(mm.out.RawValue) != "edited text" {
+		t.Fatalf("out = %q, want %q", mm.out.RawValue, "edited text")
+	}
+	if !strings.Contains(mm.list.Title, "edited text") {
+		t.Fatalf("title = %q, want it to contain the edited content", mm.list.Title)
+	}
+}

@@ -36,6 +36,10 @@ func init() {
 // generatorActions ignore their input and can be applied to any data
 var generatorActions = []Action{uuidV4Action, uuidV7Action, nowTimeAction, repeatLastAction, newCalcAction}
 
+// editorActions edit the data with an external editor, they convert any
+// data to its string representation first
+var editorActions = []Action{editAction}
+
 // inputFormats is every format generator actions are registered for,
 // text list data already offers text to text actions so it is not needed there
 var inputFormats = []Format{TextFormat, BinFormat, TimeFormat, JSONFormat, GeoFormat}
@@ -60,17 +64,24 @@ func NewRegistry() *ActionRegistry {
 
 	r.RegisterActions(cloneActions(all)...)
 
-	for _, a := range generatorActions {
+	r.registerForAllFormats(generatorActions)
+	r.registerForAllFormats(editorActions)
+
+	return r
+}
+
+// registerForAllFormats registers actions for every input format,
+// the actions must implement rebinder
+func (r *ActionRegistry) registerForAllFormats(actions []Action) {
+	for _, a := range actions {
 		rb, ok := a.(rebinder)
 		if !ok {
-			panic(fmt.Sprintf("generator action %s can't be registered for every format", a.Title()))
+			panic(fmt.Sprintf("action %s can't be registered for every format", a.Title()))
 		}
 		for _, f := range inputFormats {
 			r.RegisterAction(rb.rebind(f))
 		}
 	}
-
-	return r
 }
 
 // RegisterActions registers multiple actions by their input format, names
