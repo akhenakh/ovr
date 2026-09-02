@@ -5,6 +5,10 @@ before:
     - go mod tidy
 
 builds:
+  # darwin/arm64 needs cgo for the clipboard (golang.design/x/clipboard
+  # panics at runtime when built with CGO_ENABLED=0); cross compiled with
+  # the osxcross toolchain from goreleaser-cross, same as ovrui.
+  # darwin/amd64 stays CGO-free: osxcross only provides the arm64 SDK.
   - id: ovr
     main: ./cmd/ovr
     binary: ovr
@@ -18,6 +22,14 @@ builds:
     goarch:
       - amd64
       - arm64
+    overrides:
+      - goos: darwin
+        goarch: arm64
+        env:
+          - CGO_ENABLED=1
+          - CC=oa64-clang
+          - CXX=oa64-clang++
+          - MACOSX_DEPLOYMENT_TARGET=13.0
 
   # ovrui's macOS backend (shirei cocoabackend) requires cgo, cross compiled
   # with the osxcross toolchain from goreleaser-cross (see release.yml).
