@@ -118,6 +118,13 @@ func (r *ActionRegistry) TextListTextAction(name string, in []string) ([]byte, e
 	return out.RawValue, nil
 }
 
+func TestAction_FilterValue(t *testing.T) {
+	r := NewRegistry()
+
+	a := r.MustActionByName(TextFormat, "sha256")
+	require.Equal(t, "Sha256 SHA256 checksum of the data to hex string", a.FilterValue())
+}
+
 func TestAction_TextTextListTransform(t *testing.T) {
 	r := NewRegistry()
 

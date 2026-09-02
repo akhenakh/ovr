@@ -193,7 +193,7 @@ func (e *erased[I, O]) Description() string {
 }
 
 func (e *erased[I, O]) FilterValue() string {
-	return e.Title()
+	return e.Title() + " " + e.def.Doc
 }
 
 // Actions is a list of actions for display purposes.
