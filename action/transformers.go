@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -654,6 +655,33 @@ var stripWhitespaceAction = New(Definition[[]byte, []byte]{
 	Func: func(a Action, in []byte) ([]byte, error) {
 		r := strings.NewReplacer(" ", "", "\r", "", "\n", "", "\t", "", "\f", "")
 		return []byte(r.Replace(string(in))), nil
+	},
+})
+
+var textCountAction = New(Definition[[]byte, []byte]{
+	Doc:          "Count the number of characters in the input",
+	Names:        []string{"count"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in []byte) ([]byte, error) {
+		return []byte(strconv.Itoa(utf8.RuneCountInString(string(in)))), nil
+	},
+})
+
+var textCountLinesAction = New(Definition[[]byte, []byte]{
+	Doc:          "Count the number of lines in the input",
+	Names:        []string{"countlines"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in []byte) ([]byte, error) {
+		s := string(in)
+		n := strings.Count(s, "\n")
+		if !strings.HasSuffix(s, "\n") {
+			n++
+		}
+		return []byte(strconv.Itoa(n)), nil
 	},
 })
 

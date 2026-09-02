@@ -25,7 +25,7 @@ var all = []Action{
 	spaceTextListAction, pipeTextListAction, splitTextListAction,
 	commaTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction, jsonPrettifyAction,
 	textListSortAction, textListReverseAction,
-	textListFirstAction, textListLastAction, textListIndexAction, textListCountAction, unescapeTextAction, stripWhitespaceAction, pipeCommandAction,
+	textListFirstAction, textListLastAction, textListIndexAction, textListCountAction, textCountAction, textCountLinesAction, unescapeTextAction, stripWhitespaceAction, pipeCommandAction,
 	parseCSVAction, tableSortColumnAction, tableToCSVAction,
 }
 

@@ -198,6 +198,7 @@ func TestAction_TextListTextTransform(t *testing.T) {
 	}{
 		{action: "comma", in: []string{"a", "b"}, want: "a,b", wantErr: false},
 		{action: "line", in: []string{"a", "b"}, want: "a\nb", wantErr: false},
+		{action: "count", in: []string{"a", "bc", "def"}, want: "3", wantErr: false},
 		{action: "first", in: []string{"A", "B", "C"}, want: "A", wantErr: false},
 		{action: "last", in: []string{"A", "B", "C"}, want: "C", wantErr: false},
 		{action: "join", params: []any{"-"}, in: []string{"a", "b"}, want: "a-b", wantErr: false},
@@ -271,6 +272,11 @@ func TestAction_TextTransform(t *testing.T) {
 		{action: "unescape", in: `hello\nworld`, want: "hello\nworld", wantErr: false},
 		{action: "unescape", in: `a\tb`, want: "a\tb", wantErr: false},
 		{action: "trimspace", in: " hello ", want: "hello", wantErr: false},
+		{action: "count", in: "hello", want: "5", wantErr: false},
+		{action: "count", in: "héllo wörld", want: "11", wantErr: false},
+		{action: "countlines", in: "hello", want: "1", wantErr: false},
+		{action: "countlines", in: "hello\nworld", want: "2", wantErr: false},
+		{action: "countlines", in: "hello\nworld\n", want: "2", wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.action, func(t *testing.T) {
