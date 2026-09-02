@@ -1,3 +1,5 @@
+//go:generate go run ../tools/gen-tznames
+
 package action
 
 import (
@@ -59,13 +61,35 @@ func newTimezoneActions() []Action {
 	return out
 }
 
+// tzNamesFold maps lowercase IANA names to their canonical spelling.
+var tzNamesFold = func() map[string]string {
+	m := make(map[string]string, len(tzNames))
+	for _, n := range tzNames {
+		m[strings.ToLower(n)] = n
+	}
+	return m
+}()
+
+// canonicalTZName returns the canonical spelling of a timezone name,
+// matching case-insensitively, or "" when the name is not a known IANA zone.
+func canonicalTZName(name string) string {
+	return tzNamesFold[strings.ToLower(name)]
+}
+
 // loadLocation loads a timezone by name, accepting common case mistakes
-// like america/montreal for America/Montreal
+// like america/montreal for America/Montreal. The canonical spelling is
+// resolved against the embedded name list first: on case-insensitive
+// filesystems (macOS) time.LoadLocation would happily load the raw name
+// and report it back unnormalized.
 func loadLocation(name string) (*time.Location, error) {
+	if canonical := canonicalTZName(name); canonical != "" {
+		name = canonical
+	}
 	loc, err := time.LoadLocation(name)
 	if err == nil {
 		return loc, nil
 	}
+	// fallback for zones newer than the generated name list
 	for _, candidate := range locationCaseVariants(name) {
 		if loc, err := time.LoadLocation(candidate); err == nil {
 			return loc, nil

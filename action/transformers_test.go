@@ -380,6 +380,8 @@ func TestAction_TzCaseInsensitive(t *testing.T) {
 		{"asia/kolkata", "Asia/Kolkata"},
 		{"australia/sydney", "Australia/Sydney"},
 		{"utc", "UTC"},
+		{"etc/gmt-14", "Etc/GMT-14"},
+		{"Etc/GMT-14", "Etc/GMT-14"},
 		{"America/Argentina/Buenos_Aires", "America/Argentina/Buenos_Aires"},
 	}
 	for _, tt := range tests {
