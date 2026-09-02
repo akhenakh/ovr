@@ -9,7 +9,7 @@ import (
 	. "go.hasen.dev/shirei"
 	app "go.hasen.dev/shirei/app"
 
-	"golang.design/x/clipboard"
+	"github.com/akhenakh/ovr/internal/clipboard"
 )
 
 func main() {

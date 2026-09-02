@@ -7,7 +7,7 @@ import (
 	"os"
 
 	tea "charm.land/bubbletea/v2"
-	"golang.design/x/clipboard"
+	"github.com/akhenakh/ovr/internal/clipboard"
 )
 
 func main() {
@@ -48,7 +48,7 @@ func main() {
 	} else if *readStdin {
 		stdin, _ := io.ReadAll(os.Stdin)
 		input = stdin
-	} else {
+	} else if clipboard.Available() {
 		input = clipboard.Read(clipboard.FmtText)
 	}
 
@@ -77,7 +77,6 @@ func main() {
 		} else {
 			fmt.Printf("%s\n---\n%s\n", m.out.StackString(), finalOutput)
 		}
-
 		if *inputFile == "" && !*readStdin {
 			clipboard.Write(clipboard.FmtText, []byte(finalOutput))
 		}
