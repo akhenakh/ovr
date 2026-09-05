@@ -84,6 +84,14 @@ func (r *ActionRegistry) registerForAllFormats(actions []Action) {
 	}
 }
 
+// RegisterActionForAllFormats registers an input-independent action for every
+// input format so it is offered no matter the data. The action must implement
+// rebinder (NewCallbackAction actions do). Text list data picks it up through
+// the text-to-text rule.
+func (r *ActionRegistry) RegisterActionForAllFormats(a Action) {
+	r.registerForAllFormats([]Action{a})
+}
+
 // RegisterActions registers multiple actions by their input format, names
 func (r *ActionRegistry) RegisterActions(actions ...Action) {
 	for _, a := range actions {

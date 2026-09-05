@@ -165,6 +165,53 @@ var themes = []*uiTheme{
 		buttonAccent: Vec4{192, 81, 14, 1}, // base02
 		floatBg:      Vec4{192, 81, 14, 1}, // base02
 	}),
+	mkTheme("solarized-light", "Solarized light theme", "solarized light theme", uiTheme{
+		// solarized light palette
+		rootBg:      Vec4{44, 87, 94, 1},  // base3
+		headerBg:    Vec4{44, 46, 88, 1},  // base2
+		headerTitle: Vec4{68, 100, 25, 1}, // green, darkened
+		headerSub:   Vec4{194, 14, 45, 1}, // base00
+		chipBg:      Vec4{44, 87, 94, 1},  // base3
+		chipText:    Vec4{175, 61, 32, 1}, // cyan, darkened
+
+		fieldBg:     Vec4{44, 87, 94, 1},    // base3
+		fieldBorder: Vec4{187, 14, 40, 0.4}, // base01
+		fieldFocus:  Vec4{205, 69, 42, 1},   // blue, darkened
+		fieldText:   Vec4{187, 14, 40, 1},   // base01
+		fieldCaret:  Vec4{187, 14, 40, 1},   // base01
+		fieldHint:   Vec4{194, 14, 45, 0.6}, // base00
+
+		paneBg:          Vec4{44, 46, 88, 1},    // base2
+		paneBorder:      Vec4{187, 14, 40, 0.4}, // base01
+		paneFocusBg:     Vec4{44, 60, 84, 1},    // base2 tinted
+		paneFocusBorder: Vec4{205, 69, 42, 1},   // blue, darkened
+		paneTitle:       Vec4{187, 14, 40, 1},   // base01
+		emptyText:       Vec4{194, 14, 45, 1},   // base00
+
+		rowTitle: Vec4{187, 14, 40, 1}, // base01
+		rowDoc:   Vec4{194, 14, 45, 1}, // base00
+		selRowBg: Vec4{205, 60, 78, 1}, // light blue
+		selTitle: Vec4{187, 14, 30, 1}, // base01, darkened
+		selDoc:   Vec4{194, 14, 35, 1}, // base00, darkened
+		hoverRow: Vec4{44, 40, 82, 1},  // base2 tinted
+
+		tabActiveBg:   Vec4{205, 60, 78, 1}, // light blue
+		tabActiveText: Vec4{187, 14, 30, 1}, // base01, darkened
+		tabIdleText:   Vec4{194, 14, 45, 1}, // base00
+		tabHoverBg:    Vec4{44, 40, 82, 1},  // base2 tinted
+		outputText:    Vec4{187, 14, 40, 1}, // base01
+
+		statusOK:   Vec4{68, 100, 25, 1}, // green, darkened
+		statusErr:  Vec4{1, 70, 40, 1},   // red, darkened
+		statusHint: Vec4{194, 14, 40, 1}, // base00
+		statusInfo: Vec4{194, 14, 45, 1}, // base00
+
+		paramsLabel: Vec4{45, 100, 22, 1}, // yellow, darkened
+		paramsDoc:   Vec4{194, 14, 45, 1}, // base00
+
+		buttonAccent: Vec4{44, 46, 85, 1}, // base2, slightly darker
+		floatBg:      Vec4{44, 87, 94, 1}, // base3
+	}),
 }
 
 // theme is the active theme

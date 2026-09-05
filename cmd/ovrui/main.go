@@ -16,6 +16,8 @@ func main() {
 	// shirei's LargeText logs every scan to the std logger; keep stdout clean
 	log.SetOutput(io.Discard)
 
+	loadConfig()
+
 	if len(os.Args) >= 3 && os.Args[1] == "--png" {
 		input := []byte("POINT(-0.4539761 48.0930043)")
 		if len(os.Args) >= 4 {

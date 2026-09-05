@@ -16,11 +16,14 @@ func TestThemeByName(t *testing.T) {
 	if themeByName("default") == nil {
 		t.Fatal("default theme not found")
 	}
+	if themeByName("solarized-light") == nil {
+		t.Fatal("solarized-light theme not found")
+	}
 	if themeByName("nope") != nil {
 		t.Fatal("unknown theme returned")
 	}
-	if len(themes) != 2 {
-		t.Fatalf("got %d themes, want 2", len(themes))
+	if len(themes) != 3 {
+		t.Fatalf("got %d themes, want 3", len(themes))
 	}
 }
 
@@ -72,6 +75,15 @@ func TestThemeSwitchAction(t *testing.T) {
 	}
 	if theme.name != "solarized-dark" {
 		t.Fatalf("active theme is %q, want solarized-dark", theme.name)
+	}
+
+	// and to solarized light
+	light := findThemeAction(t, "solarized light theme")
+	if !applyAction(light) {
+		t.Fatal("applying the solarized light theme action failed")
+	}
+	if theme.name != "solarized-light" {
+		t.Fatalf("active theme is %q, want solarized-light", theme.name)
 	}
 
 	// the data is untouched by theme actions

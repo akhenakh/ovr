@@ -43,9 +43,69 @@ var appData = &AppState{}
 // commands can target it
 var actionsListKey = new(int)
 
+// themedTextInput renders a single-line text field with the active theme's
+// chrome (the stock TextInputExt hardcodes a light face).
+func themedTextInput(buf *string, attrs TextInputAttrs) {
+	raw := TextInputConfigFromAttrs(attrs)
+	raw.TextColor = theme.fieldText
+	raw.CaretColor = theme.fieldCaret
+	raw.PlaceholderColor = theme.fieldHint
+
+	// replicate the stock chrome sizing: comfort-scale font & padding
+	cfg := raw
+	if cfg.FontSize == 0 {
+		cfg.FontSize = DefaultTextSize
+	}
+	if cfg.Padding == (Vec4{}) {
+		cfg.Padding = N4(cfg.FontSize / 2)
+	}
+	s := ComfortScale()
+	cfg.FontSize *= s
+	for i := range cfg.Padding {
+		cfg.Padding[i] *= s
+	}
+	rows := cfg.Rows
+	if rows == 0 {
+		rows = 1
+	}
+	padSize := PadSize(cfg.Padding)
+	boxH := f32(rows)*cfg.FontSize + padSize[1]
+	minW := padSize[0] + cfg.FontSize*10
+	if cfg.MinWidth > 0 {
+		minW = cfg.MinWidth
+	}
+
+	Container(Attrs(
+		Focusable,
+		Corners(4),
+		BackgroundVec(theme.fieldBg),
+		PadVec(cfg.Padding),
+		MinSizeVec(Vec2{minW, boxH}),
+		MaxSizeVec(Vec2{cfg.MaxWidth, boxH}),
+		Clip,
+		BorderWidth(1),
+		BorderColorVec(theme.fieldBorder),
+	), func() {
+		if !cfg.FixedWidth && cfg.MaxWidth == 0 {
+			ModAttrs(Expand)
+			if GetAttrs().Row {
+				ModAttrs(Grow(1))
+			}
+		}
+		st := ProcessTextInput(buf, raw)
+		if st.HasFocus {
+			ModAttrs(BorderColorVec(theme.fieldFocus))
+		} else {
+			ModAttrs(BorderColorVec(theme.fieldBorder))
+		}
+		DrawTextInputPlain(st, cfg)
+	})
+}
+
 func setInput(in []byte) {
 	if appData.registry == nil {
 		appData.registry = action.DefaultRegistry()
+		registerThemeActions(appData.registry)
 	}
 	r := appData.registry
 	out := action.NewDataText(in)
@@ -295,7 +355,7 @@ func RootView() {
 		}
 	}
 
-	Container(Attrs(Viewport, AmendTextStyle(Fonts(fontFamily)), Background(220, 10, 97, 1)), func() {
+	Container(Attrs(Viewport, AmendTextStyle(Fonts(fontFamily)), BackgroundVec(theme.rootBg)), func() {
 		Header()
 		Toolbar()
 		ParamsPanel()
@@ -308,19 +368,19 @@ func RootView() {
 }
 
 func Header() {
-	Container(Attrs(Row, Expand, CrossMid, Gap(10), Pad2(10, 14), Background(220, 25, 18, 1)), func() {
-		Label("ovr", FontSize(17), FontWeight(WeightBold), TextColor(0, 0, 100, 1))
-		Label("companion", FontSize(11), TextColor(0, 0, 78, 1))
+	Container(Attrs(Row, Expand, CrossMid, Gap(10), Pad2(10, 14), BackgroundVec(theme.headerBg)), func() {
+		Label("ovr", FontSize(17), FontWeight(WeightBold), TextColorVec(theme.headerTitle))
+		Label("companion", FontSize(11), TextColorVec(theme.headerSub))
 		Filler(1)
-		Container(Attrs(Pad2(3, 10), Corners(10), Background(220, 30, 32, 1)), func() {
-			Label(dataSummary(), FontSize(11), TextColor(0, 0, 92, 1))
+		Container(Attrs(Pad2(3, 10), Corners(10), BackgroundVec(theme.chipBg)), func() {
+			Label(dataSummary(), FontSize(11), TextColorVec(theme.chipText))
 		})
 	})
 }
 
 func Toolbar() {
 	Container(Attrs(Row, Expand, CrossMid, Gap(8), Pad2(8, 14)), func() {
-		TextInputExt(&appData.search, TextInputAttrs{Placeholder: "filter actions…", MaxWidth: 340, MaxLines: 1})
+		themedTextInput(&appData.search, TextInputAttrs{Placeholder: "filter actions…", MaxWidth: 340, MaxLines: 1})
 		appData.filterId = GetLastId()
 		// clicking into the field returns keyboard focus mode to the filter
 		if IdReceivedFocusNow(appData.filterId) {
@@ -351,11 +411,11 @@ func ParamsPanel() {
 		return
 	}
 	Container(Attrs(Row, Expand, CrossMid, Gap(10), Pad2(2, 14), Wrap), func() {
-		Label("Parameters", FontSize(12), FontWeight(WeightBold), TextColor(0, 0, 30, 1))
+		Label("Parameters", FontSize(12), FontWeight(WeightBold), TextColorVec(theme.paramsLabel))
 		for i, p := range a.Parameters() {
 			Container(Attrs(Row, CrossMid, Gap(6)), func() {
-				Label(p.Doc, FontSize(11), TextColor(0, 0, 45, 1))
-				TextInputExt(&appData.paramBuf[i], TextInputAttrs{
+				Label(p.Doc, FontSize(11), TextColorVec(theme.paramsDoc))
+				themedTextInput(&appData.paramBuf[i], TextInputAttrs{
 					Placeholder: p.Doc,
 					MaxWidth:    160,
 					MaxLines:    1,
@@ -371,17 +431,17 @@ func ParamsPanel() {
 
 func ActionsPane() {
 	list := filteredActions()
-	Container(Attrs(FixWidth(420), Expand, Clip, Corners(6), Background(220, 12, 94, 1), BorderWidth(1), BorderColor(220, 12, 85, 1)), func() {
+	Container(Attrs(FixWidth(420), Expand, Clip, Corners(6), BackgroundVec(theme.paneBg), BorderWidth(1), BorderColorVec(theme.paneBorder)), func() {
 		// tint the pane while the keyboard focus is on the list
 		if appData.listFocus {
-			ModAttrs(Background(210, 35, 95, 1), BorderColor(210, 60, 55, 1))
+			ModAttrs(BackgroundVec(theme.paneFocusBg), BorderColorVec(theme.paneFocusBorder))
 		}
 		Container(Attrs(Row, CrossMid, Pad2(6, 10)), func() {
-			Label(fmt.Sprintf("Actions (%d)", len(list)), FontSize(12), FontWeight(WeightBold), TextColor(0, 0, 30, 1))
+			Label(fmt.Sprintf("Actions (%d)", len(list)), FontSize(12), FontWeight(WeightBold), TextColorVec(theme.paneTitle))
 		})
 		if len(list) == 0 {
 			Container(Attrs(Expand, Center), func() {
-				Label("no matching actions", FontSize(12), TextColor(0, 0, 55, 1))
+				Label("no matching actions", FontSize(12), TextColorVec(theme.emptyText))
 			})
 			return
 		}
@@ -401,9 +461,9 @@ func actionRow(a action.Action) {
 	Container(Attrs(Expand, FixHeight(52), Pad2(4, 10), Clip), func() {
 		selected := appData.selected == a
 		if selected {
-			ModAttrs(Background(210, 65, 86, 1), Corners(4))
+			ModAttrs(BackgroundVec(theme.selRowBg), Corners(4))
 		} else if IsHovered() {
-			ModAttrs(Background(220, 18, 90, 1), Corners(4))
+			ModAttrs(BackgroundVec(theme.hoverRow), Corners(4))
 		}
 		if IsClicked() {
 			selectAction(a)
@@ -413,24 +473,29 @@ func actionRow(a action.Action) {
 			applySelected()
 		}
 		Container(Attrs(Expand, Clip), func() {
-			Label(a.Title(), FontSize(13), FontWeight(WeightBold), TextColor(0, 0, 18, 1))
-			Label(a.Doc(), FontSize(11), TextColor(0, 0, 42, 1))
+			if selected {
+				Label(a.Title(), FontSize(13), FontWeight(WeightBold), TextColorVec(theme.selTitle))
+				Label(a.Doc(), FontSize(11), TextColorVec(theme.selDoc))
+			} else {
+				Label(a.Title(), FontSize(13), FontWeight(WeightBold), TextColorVec(theme.rowTitle))
+				Label(a.Doc(), FontSize(11), TextColorVec(theme.rowDoc))
+			}
 		})
 	})
 }
 
 func OutputPane() {
-	Container(Attrs(Grow(1), Expand, Extrinsic, Clip, Corners(6), Background(220, 12, 95, 1), BorderWidth(1), BorderColor(220, 12, 85, 1)), func() {
+	Container(Attrs(Grow(1), Expand, Extrinsic, Clip, Corners(6), BackgroundVec(theme.paneBg), BorderWidth(1), BorderColorVec(theme.paneBorder)), func() {
 		Container(Attrs(Row, CrossMid, Pad2(6, 10), Gap(6)), func() {
 			tabButton("Output", 0)
 			tabButton("Input", 1)
 			Filler(1)
-			Label(dataSummary(), FontSize(11), TextColor(0, 0, 45, 1))
+			Label(dataSummary(), FontSize(11), TextColorVec(theme.rowDoc))
 		})
 		if appData.tab == 0 {
-			LargeText(appData.out.String())
+			LargeText(appData.out.String(), TextColorVec(theme.outputText))
 		} else {
-			LargeText(string(appData.in))
+			LargeText(string(appData.in), TextColorVec(theme.outputText))
 		}
 	})
 }
@@ -439,17 +504,17 @@ func tabButton(label string, tab int) {
 	active := appData.tab == tab
 	Container(Attrs(Pad2(4, 12), Corners(4)), func() {
 		if active {
-			ModAttrs(Background(210, 60, 45, 1))
+			ModAttrs(BackgroundVec(theme.tabActiveBg))
 		} else if IsHovered() {
-			ModAttrs(Background(220, 18, 88, 1))
+			ModAttrs(BackgroundVec(theme.tabHoverBg))
 		}
 		if IsClicked() {
 			appData.tab = tab
 		}
 		if active {
-			Label(label, FontSize(12), TextColor(0, 0, 100, 1))
+			Label(label, FontSize(12), TextColorVec(theme.tabActiveText))
 		} else {
-			Label(label, FontSize(12), TextColor(0, 0, 30, 1))
+			Label(label, FontSize(12), TextColorVec(theme.tabIdleText))
 		}
 	})
 }
@@ -458,14 +523,14 @@ func StatusBar() {
 	Container(Attrs(Row, Expand, CrossMid, Gap(8), Pad2(6, 14)), func() {
 		if appData.status != "" {
 			if appData.isErr {
-				Label(appData.status, FontSize(12), TextColor(0, 70, 45, 1))
+				Label(appData.status, FontSize(12), TextColorVec(theme.statusErr))
 			} else {
-				Label(appData.status, FontSize(12), TextColor(150, 60, 32, 1))
+				Label(appData.status, FontSize(12), TextColorVec(theme.statusOK))
 			}
 		} else {
-			Label("Enter selects · ↑↓ navigate · Enter applies · Tab toggles filter/list · Esc clears the filter · "+quitHint(), FontSize(11), TextColor(0, 0, 55, 1))
+			Label("Enter selects · ↑↓ navigate · Enter applies · Tab toggles filter/list · Esc clears the filter · "+quitHint(), FontSize(11), TextColorVec(theme.statusHint))
 		}
 		Filler(1)
-		Label(appData.out.StackString(), FontSize(11), TextColor(0, 0, 45, 1))
+		Label(appData.out.StackString(), FontSize(11), TextColorVec(theme.statusInfo))
 	})
 }
