@@ -28,9 +28,20 @@ type AppState struct {
 	tab      int
 	status   string
 	isErr    bool
+	// keyboard focus mode: true when the actions list holds the keyboard,
+	// false when the filter field does
+	listFocus bool
+	// handle of the filter text field, captured each frame
+	filterId ContainerId
+	// set to re-assert focus on the filter field during the next build pass
+	refocusFilter bool
 }
 
 var appData = &AppState{}
+
+// actionsListKey identifies the actions VirtualListView so scroll-into-view
+// commands can target it
+var actionsListKey = new(int)
 
 func setInput(in []byte) {
 	if appData.registry == nil {
@@ -56,6 +67,7 @@ func setInput(in []byte) {
 	appData.tab = 0
 	appData.status = ""
 	appData.isErr = false
+	appData.listFocus = false
 	refreshActions()
 }
 
@@ -84,6 +96,34 @@ func selectFirst() {
 	}
 }
 
+// moveSelection moves the list selection one row down or up (wrapping at the
+// ends) and scrolls the list so the newly selected row is visible.
+func moveSelection(down bool) {
+	list := filteredActions()
+	if len(list) == 0 {
+		return
+	}
+	idx := -1
+	for i, a := range list {
+		if appData.selected == a {
+			idx = i
+			break
+		}
+	}
+	switch {
+	case idx == -1 && down:
+		idx = 0
+	case idx == -1:
+		idx = len(list) - 1
+	case down:
+		idx = (idx + 1) % len(list)
+	default:
+		idx = (idx - 1 + len(list)) % len(list)
+	}
+	selectAction(list[idx])
+	VirtualListScrollIntoView(actionsListKey, list[idx])
+}
+
 func selectAction(a action.Action) {
 	if appData.selected == a {
 		return
@@ -97,19 +137,45 @@ func setStatus(msg string, isErr bool) {
 	appData.isErr = isErr
 }
 
-func applySelected() {
-	if appData.selected == nil {
-		setStatus("select an action first", true)
-		return
-	}
-	applyAction(appData.selected)
+// focusList moves keyboard focus from the filter field to the actions list
+// without changing the selection.
+func focusList() {
+	appData.listFocus = true
+	ClearFocus()
 }
 
-func applyAction(a action.Action) {
+// activateList moves keyboard focus from the filter field to the actions
+// list: the first matching action becomes the selection.
+func activateList() {
+	focusList()
+	selectFirst()
+}
+
+// exitListFocus moves keyboard focus back to the filter field.
+func exitListFocus() {
+	appData.listFocus = false
+	appData.refocusFilter = true
+}
+
+func applySelected() bool {
+	if appData.selected == nil {
+		setStatus("select an action first", true)
+		return false
+	}
+	if !applyAction(appData.selected) {
+		return false
+	}
+	// applying from the list resets the filter and returns focus to it
+	appData.search = ""
+	exitListFocus()
+	return true
+}
+
+func applyAction(a action.Action) bool {
 	if params := a.Parameters(); len(params) > 0 {
 		if len(appData.paramBuf) != len(params) {
 			setStatus(fmt.Sprintf("%s: missing parameters", a.Title()), true)
-			return
+			return false
 		}
 		values := make([]any, len(params))
 		for i, p := range params {
@@ -119,34 +185,34 @@ func applyAction(a action.Action) {
 				n, err := strconv.Atoi(v)
 				if err != nil {
 					setStatus(fmt.Sprintf("%s: %s needs an integer", a.Title(), p.Doc), true)
-					return
+					return false
 				}
 				values[i] = n
 			case action.FloatParameter:
 				f, err := strconv.ParseFloat(v, 64)
 				if err != nil {
 					setStatus(fmt.Sprintf("%s: %s needs a number", a.Title(), p.Doc), true)
-					return
+					return false
 				}
 				values[i] = f
 			case action.StringParameter:
 				if v == "" {
 					setStatus(fmt.Sprintf("%s: %s is required", a.Title(), p.Doc), true)
-					return
+					return false
 				}
 				values[i] = v
 			}
 		}
 		if err := a.SetInputParameters(values...); err != nil {
 			setStatus(err.Error(), true)
-			return
+			return false
 		}
 	}
 
 	out, err := a.Transform(appData.out)
 	if err != nil {
 		setStatus(err.Error(), true)
-		return
+		return false
 	}
 	appData.out = out
 	appData.tab = 0
@@ -154,6 +220,7 @@ func applyAction(a action.Action) {
 	appData.paramBuf = nil
 	refreshActions()
 	setStatus("applied "+a.Title(), false)
+	return true
 }
 
 func undoAction() {
@@ -202,9 +269,26 @@ func dataSummary() string {
 func RootView() {
 	switch GetFrameInput().Key {
 	case KeyEnter:
-		applySelected()
+		if appData.listFocus {
+			applySelected()
+		} else {
+			// Enter in the filter field activates the actions list
+			activateList()
+		}
+	case KeyTab:
+		// Tab toggles between the filter field and the actions list
+		if appData.listFocus {
+			exitListFocus()
+		} else {
+			focusList()
+		}
+	case KeyDown, KeyUp:
+		if appData.listFocus {
+			moveSelection(GetFrameInput().Key == KeyDown)
+		}
 	case KeyEscape:
 		appData.search = ""
+		exitListFocus()
 	case KeyQ:
 		if ActiveCombo() == Combo(KeyQ, PrimaryMod()) {
 			quitApp(0)
@@ -237,6 +321,15 @@ func Header() {
 func Toolbar() {
 	Container(Attrs(Row, Expand, CrossMid, Gap(8), Pad2(8, 14)), func() {
 		TextInputExt(&appData.search, TextInputAttrs{Placeholder: "filter actions…", MaxWidth: 340, MaxLines: 1})
+		appData.filterId = GetLastId()
+		// clicking into the field returns keyboard focus mode to the filter
+		if IdReceivedFocusNow(appData.filterId) {
+			appData.listFocus = false
+		}
+		if appData.refocusFilter {
+			appData.refocusFilter = false
+			FocusImmediateOn(appData.filterId)
+		}
 		if Button(SymRefresh, "Reload") {
 			reloadClipboard()
 		}
@@ -279,6 +372,10 @@ func ParamsPanel() {
 func ActionsPane() {
 	list := filteredActions()
 	Container(Attrs(FixWidth(420), Expand, Clip, Corners(6), Background(220, 12, 94, 1), BorderWidth(1), BorderColor(220, 12, 85, 1)), func() {
+		// tint the pane while the keyboard focus is on the list
+		if appData.listFocus {
+			ModAttrs(Background(210, 35, 95, 1), BorderColor(210, 60, 55, 1))
+		}
 		Container(Attrs(Row, CrossMid, Pad2(6, 10)), func() {
 			Label(fmt.Sprintf("Actions (%d)", len(list)), FontSize(12), FontWeight(WeightBold), TextColor(0, 0, 30, 1))
 		})
@@ -290,7 +387,7 @@ func ActionsPane() {
 		}
 		Container(Attrs(Grow(1), Expand, Clip), func() {
 			VirtualListView(
-				nil,
+				actionsListKey,
 				len(list),
 				func(i int) any { return list[i] },
 				func(i int, w f32) f32 { return 52 },
@@ -310,6 +407,7 @@ func actionRow(a action.Action) {
 		}
 		if IsClicked() {
 			selectAction(a)
+			appData.listFocus = true
 		}
 		if IsDoubleClicked() {
 			applySelected()
@@ -365,7 +463,7 @@ func StatusBar() {
 				Label(appData.status, FontSize(12), TextColor(150, 60, 32, 1))
 			}
 		} else {
-			Label("click to select · double-click or Enter to apply · Esc clears the filter · "+quitHint(), FontSize(11), TextColor(0, 0, 55, 1))
+			Label("Enter selects · ↑↓ navigate · Enter applies · Tab toggles filter/list · Esc clears the filter · "+quitHint(), FontSize(11), TextColor(0, 0, 55, 1))
 		}
 		Filler(1)
 		Label(appData.out.StackString(), FontSize(11), TextColor(0, 0, 45, 1))
