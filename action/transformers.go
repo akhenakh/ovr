@@ -606,6 +606,23 @@ var spaceTextListAction = New(Definition[[]byte, []string]{
 	},
 })
 
+var linesTextListAction = New(Definition[[]byte, []string]{
+	Doc:          "Parse a multi-line text input as a list of lines",
+	Names:        []string{"lines"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextListFormat,
+	Func: func(a Action, in []byte) ([]string, error) {
+		s := strings.ReplaceAll(string(in), "\r\n", "\n")
+		l := strings.Split(strings.TrimRight(s, "\n"), "\n")
+		if len(l) <= 1 {
+			return []string{}, errors.New("can't split using new lines")
+		}
+
+		return l, nil
+	},
+})
+
 var splitTextListAction = New(Definition[[]byte, []string]{
 	Doc:          "Parse a text input as a list separated by a provided char",
 	Names:        []string{"split"},

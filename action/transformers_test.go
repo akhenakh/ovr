@@ -140,6 +140,11 @@ func TestAction_TextTextListTransform(t *testing.T) {
 		{"space", "a b c", []string{"a", "b", "c"}, false},
 		{"space", "a", nil, true},
 		{"pipe", "a|b|c", []string{"a", "b", "c"}, false},
+		{"lines", "a\nb\nc", []string{"a", "b", "c"}, false},
+		{"lines", "a\r\nb\r\nc", []string{"a", "b", "c"}, false},
+		{"lines", "a\n\nb", []string{"a", "", "b"}, false},
+		{"lines", "a\nb\n", []string{"a", "b"}, false},
+		{"lines", "a b", nil, true},
 		{
 			"jwt",
 			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IlJvYmVydCIsImlhdCI6MTUxNjIzOTAyMn0.fiHN5qbwhxBjwxLKSXfDV4wkVeuNeV8URADmuiYYYQo",

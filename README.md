@@ -144,7 +144,7 @@ Tasks are defined in `Taskfile.yml` ([go-task](https://taskfile.dev)):
 - [X] encoding from/to (b64, hex ...)
 - [X] hashes (md5, sha1, sha256, sha512, crc32, hmac)
 - [X] count inputs
-- [X] split text into a list with any separator (`split`), by comma, space, pipe
+- [X] split text into a list with any separator (`split`), by comma, space, pipe, new lines (`lines`)
 - [X] list actions: sort, reverse, unique, shuffle, filter, first, last, index, count, join
 - [X] list to JSON/YAML (`tojson`, `toyaml`)
 - [X] time parse transform, epoch

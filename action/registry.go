@@ -24,7 +24,7 @@ var all = []Action{
 	parseDateStringAction, epochTimeAction, addDurationTimeAction,
 	tzTimeAction, isoTimeAction, humanizeTimeAction, toJSONDateStringAction, timeEpochAction,
 	spaceTextListAction, pipeTextListAction, splitTextListAction,
-	commaTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction, jsonPrettifyAction,
+	commaTextListAction, linesTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction, jsonPrettifyAction,
 	textListSortAction, textListReverseAction, textListUniqueAction, textListShuffleAction, textListFilterAction, textListToJSONAction, textListToYAMLAction,
 	textListFirstAction, textListLastAction, textListIndexAction, textListCountAction, textCountAction, textCountLinesAction, humanizeDurationTextAction, humanBytesAction, unescapeTextAction, stripWhitespaceAction, pipeCommandAction,
 	dictAction, dictGetAction, dictToJSONAction, dictKeysAction,
