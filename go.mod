@@ -9,6 +9,7 @@ require (
 	github.com/akhenakh/coord2country v0.0.0-20260314151757-da75e63be731
 	github.com/akhenakh/goh3 v0.0.0-20260315153541-02d99f35fd29
 	github.com/akhenakh/tiletea v0.0.0-20260827035354-15e835340236
+	github.com/dustin/go-humanize v1.0.1
 	github.com/golang/geo v0.0.0-20260818125358-b200a1149890
 	github.com/peterstace/simplefeatures v0.59.0
 	github.com/stretchr/testify v1.12.1
@@ -43,7 +44,6 @@ require (
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/dboslee/lru v0.0.1 // indirect
-	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ebitengine/purego v0.10.1 // indirect
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
 	github.com/go-fonts/latin-modern v0.3.3 // indirect

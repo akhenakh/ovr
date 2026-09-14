@@ -2,6 +2,7 @@ package action
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -171,6 +172,9 @@ func TestAction_TextListTextListTransform(t *testing.T) {
 	}{
 		{"upper", []string{"a", "b"}, []string{"A", "B"}, false},
 		{"lower", []string{"A", "B"}, []string{"a", "b"}, false},
+		{"unique", []string{"a", "b", "a", "c", "b"}, []string{"a", "b", "c"}, false},
+		{"dedupe", []string{"b", "b", "b"}, []string{"b"}, false},
+		{"shuffle", []string{"a"}, []string{"a"}, false},
 	}
 
 	for _, tt := range tests {
@@ -272,6 +276,27 @@ func TestAction_TextTransform(t *testing.T) {
 		{action: "unescape", in: `hello\nworld`, want: "hello\nworld", wantErr: false},
 		{action: "unescape", in: `a\tb`, want: "a\tb", wantErr: false},
 		{action: "trimspace", in: " hello ", want: "hello", wantErr: false},
+		{action: "camel", in: "hello world", want: "helloWorld", wantErr: false},
+		{action: "camel", in: "hello_world", want: "helloWorld", wantErr: false},
+		{action: "camel", in: "hello-world", want: "helloWorld", wantErr: false},
+		{action: "camel", in: "helloWorld", want: "helloWorld", wantErr: false},
+		{action: "camel", in: "HTTPServer", want: "httpServer", wantErr: false},
+		{action: "snake", in: "hello world", want: "hello_world", wantErr: false},
+		{action: "snake", in: "helloWorld", want: "hello_world", wantErr: false},
+		{action: "snake", in: "HTTPServer", want: "http_server", wantErr: false},
+		{action: "kebab", in: "hello world", want: "hello-world", wantErr: false},
+		{action: "kebab", in: "helloWorld", want: "hello-world", wantErr: false},
+		{action: "pascal", in: "hello world", want: "HelloWorld", wantErr: false},
+		{action: "pascal", in: "hello_world", want: "HelloWorld", wantErr: false},
+		{action: "pascal", in: "HTTPServer", want: "HttpServer", wantErr: false},
+		{action: "humanize", in: "2h30m", want: "2 hours 30 minutes", wantErr: false},
+		{action: "humanize", in: "2d", want: "2 days", wantErr: false},
+		{action: "humanize", in: "1w", want: "1 week", wantErr: false},
+		{action: "humanize", in: "500ms", want: "500 milliseconds", wantErr: false},
+		{action: "humanize", in: "-90m", want: "-1 hour 30 minutes", wantErr: false},
+		{action: "humanize", in: "abc", want: "", wantErr: true},
+		{action: "humanbytes", in: "1048576", want: "1.0 MB", wantErr: false},
+		{action: "humanbytes", in: "notanumber", want: "", wantErr: true},
 		{action: "count", in: "hello", want: "5", wantErr: false},
 		{action: "count", in: "héllo wörld", want: "11", wantErr: false},
 		{action: "countlines", in: "hello", want: "1", wantErr: false},
@@ -289,6 +314,112 @@ func TestAction_TextTransform(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAction_SplitWords(t *testing.T) {
+	tests := []struct {
+		in   string
+		want []string
+	}{
+		{"hello world", []string{"hello", "world"}},
+		{"helloWorld", []string{"hello", "World"}},
+		{"hello_world", []string{"hello", "world"}},
+		{"hello-world", []string{"hello", "world"}},
+		{"HTTPServer", []string{"HTTP", "Server"}},
+		{"HTTPS", []string{"HTTPS"}},
+		{"hello1World", []string{"hello1", "World"}},
+		{"  padded  text  ", []string{"padded", "text"}},
+		{"", nil},
+	}
+	for _, tt := range tests {
+		require.Equal(t, tt.want, splitWords(tt.in), tt.in)
+	}
+}
+
+func TestAction_TextHumanize(t *testing.T) {
+	r := NewRegistry()
+
+	got, err := r.TimeTextAction("humanize", time.Now().Add(-72*time.Hour))
+	require.NoError(t, err)
+	require.Equal(t, "3 days ago", string(got))
+
+	got, err = r.TimeTextAction("ago", time.Now())
+	require.NoError(t, err)
+	require.Equal(t, "now", string(got))
+}
+
+func TestAction_TextListShuffle(t *testing.T) {
+	r := NewRegistry()
+
+	in := []string{"a", "b", "c", "d", "e", "f", "g", "h"}
+	got, err := r.TextListTextListAction("shuffle", in)
+	require.NoError(t, err)
+	require.ElementsMatch(t, in, got)
+}
+
+func TestAction_TextListFilter(t *testing.T) {
+	r := NewRegistry()
+
+	a := r.MustActionByName(TextListFormat, "filter")
+	_, err := a.Transform(NewDataTextList([]string{"a"}))
+	require.Error(t, err)
+	require.NoError(t, a.SetInputParameters("^a"))
+	out, err := a.Transform(NewDataTextList([]string{"apple", "banana", "apricot"}))
+	require.NoError(t, err)
+	require.Equal(t, []string{"apple", "apricot"}, out.Value)
+
+	require.NoError(t, a.SetInputParameters("["))
+	_, err = a.Transform(NewDataTextList([]string{"apple"}))
+	require.Error(t, err)
+}
+
+func TestAction_Password(t *testing.T) {
+	r := NewRegistry()
+
+	a := r.MustActionByName(TextFormat, "password")
+	require.Error(t, a.SetInputParameters("16"))
+	require.NoError(t, a.SetInputParameters(16, "digits,symbols"))
+	out, err := a.Transform(NewDataText([]byte("ignored")))
+	require.NoError(t, err)
+	p := string(out.RawValue)
+	require.Len(t, p, 16)
+	require.True(t, strings.ContainsAny(p, passwordLetters), p)
+	require.True(t, strings.ContainsAny(p, passwordDigits), p)
+	require.True(t, strings.ContainsAny(p, passwordSymbols), p)
+
+	b := r.MustActionByName(TextFormat, "passwd")
+	require.NoError(t, b.SetInputParameters(12, ""))
+	out, err = b.Transform(NewDataText([]byte("ignored")))
+	require.NoError(t, err)
+	require.Regexp(t, `^[a-zA-Z]{12}$`, string(out.RawValue))
+
+	bad := r.MustActionByName(TextFormat, "password")
+	require.NoError(t, bad.SetInputParameters(8, "bogus"))
+	_, err = bad.Transform(NewDataText([]byte("ignored")))
+	require.Error(t, err)
+	require.NoError(t, bad.SetInputParameters(2, "digits,symbols"))
+	_, err = bad.Transform(NewDataText([]byte("ignored")))
+	require.Error(t, err)
+	require.NoError(t, bad.SetInputParameters(0, ""))
+	_, err = bad.Transform(NewDataText([]byte("ignored")))
+	require.Error(t, err)
+}
+
+func TestAction_ParseDateUnixCmd(t *testing.T) {
+	r := NewRegistry()
+
+	got, err := r.TextTimeAction("date", []byte("Sun 13 Sep 2026 09:08:54 PM EDT"))
+	require.NoError(t, err)
+	require.Equal(t, 2026, got.Year())
+	require.Equal(t, time.September, got.Month())
+	require.Equal(t, 13, got.Day())
+	require.Equal(t, 21, got.Hour())
+	require.Equal(t, 8, got.Minute())
+	require.Equal(t, 54, got.Second())
+
+	got, err = r.TextTimeAction("date", []byte("Sun Sep 13 21:08:54 UTC 2026"))
+	require.NoError(t, err)
+	require.Equal(t, time.Date(2026, time.September, 13, 21, 8, 54, 0, time.UTC), got)
 }
 
 func TestAction_TextTimeTransform(t *testing.T) {

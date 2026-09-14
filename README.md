@@ -88,14 +88,15 @@ followed by the result.
 
 - [X] to upper/lower
 - [X] Title
-- [ ] CamelCase
+- [X] CamelCase, snake_case, kebab-case, PascalCase (`camel`, `snake`, `kebab`, `pascal`)
+- [X] humanize: time to relative text like '3 days ago' (`humanize`, `ago`), durations like `2h30m`, `2d` to '2 hours 30 minutes' (`humanize`), byte counts like 1048576 to '1.0 MB' (`humanbytes`)
 - [X] encoding from/to (b64, hex ...)
 - [X] hashes (md5, sha1, sha256, sha512, crc32, hmac)
 - [X] count inputs
 - [X] split text into a list with any separator (`split`), by comma, space, pipe
-- [X] list actions: sort, reverse, first, last, index, count, join
+- [X] list actions: sort, reverse, unique, shuffle, filter, first, last, index, count, join
 - [X] time parse transform, epoch
-- [X] date parsing: ISO 8601/JSON dates, Go time strings (`date`)
+- [X] date parsing: ISO 8601/JSON dates, Go time strings, unix `date` command output like `Sun 13 Sep 2026 09:08:54 PM EDT` (`date`)
 - [X] time to ISO, epoch, JSON date string
 - [X] timezones: est, et, utc, pt, mst, cst, brt, gmt, cet, eet, msk, ist, sgt, hkt, jst, kst, aest, nzst, hst
 - [X] duration add/substract, Go durations like `1s`, `2h30m`, days `2d`, weeks `3w`, negative to substract (`adddur`)
@@ -127,15 +128,16 @@ followed by the result.
 - [ ] Save to file
 
 ## Filter 
-- [ ] dedup from a list
+- [X] dedup from a list (`unique`)
 - [ ] Filter fields, select values
 - [ ] JMESPath
 - [ ] Regexp
 - [ ] https://github.com/tidwall/gjson
 
 ## Create Data (not from stdin or pasteboard)
-- [ ] Time Now
-- [ ] UUID
+- [X] Time Now (`now`)
+- [X] UUID (`uuid4`, `uuid7`)
+- [X] Password (`password`), length + digits/symbols options
 - [ ] From an HTTP Request
 - [ ] Multiple Create (will create as many above)
 - [ ] From Editor

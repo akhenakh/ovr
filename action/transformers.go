@@ -16,7 +16,9 @@ import (
 	"fmt"
 	"hash/crc32"
 	"io"
+	"math/rand"
 	"os/exec"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -24,6 +26,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/dustin/go-humanize"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -66,6 +69,101 @@ var titleAction = New(Definition[[]byte, []byte]{
 		return []byte(titleStr), nil
 	},
 })
+
+var camelAction = New(Definition[[]byte, []byte]{
+	Doc:          "Transforms input to camelCase, e.g. hello world, hello_world, helloWorld to helloWorld",
+	Names:        []string{"camel"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in []byte) ([]byte, error) {
+		words := splitWords(string(in))
+		for i := range words {
+			if i > 0 {
+				words[i] = capitalize(strings.ToLower(words[i]))
+			} else {
+				words[i] = strings.ToLower(words[i])
+			}
+		}
+		return []byte(strings.Join(words, "")), nil
+	},
+})
+
+var snakeAction = New(Definition[[]byte, []byte]{
+	Doc:          "Transforms input to snake_case, e.g. hello world, helloWorld to hello_world",
+	Names:        []string{"snake"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in []byte) ([]byte, error) {
+		words := splitWords(string(in))
+		for i := range words {
+			words[i] = strings.ToLower(words[i])
+		}
+		return []byte(strings.Join(words, "_")), nil
+	},
+})
+
+var kebabAction = New(Definition[[]byte, []byte]{
+	Doc:          "Transforms input to kebab-case, e.g. hello world, helloWorld to hello-world",
+	Names:        []string{"kebab"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in []byte) ([]byte, error) {
+		words := splitWords(string(in))
+		for i := range words {
+			words[i] = strings.ToLower(words[i])
+		}
+		return []byte(strings.Join(words, "-")), nil
+	},
+})
+
+var pascalAction = New(Definition[[]byte, []byte]{
+	Doc:          "Transforms input to PascalCase, e.g. hello world, hello_world to HelloWorld",
+	Names:        []string{"pascal"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in []byte) ([]byte, error) {
+		words := splitWords(string(in))
+		for i := range words {
+			words[i] = capitalize(strings.ToLower(words[i]))
+		}
+		return []byte(strings.Join(words, "")), nil
+	},
+})
+
+// splitWords splits text into words on whitespace, separators and case
+// boundaries, e.g. "helloWorld", "hello_world" and "hello world" all
+// split into the words hello and World, acronyms are kept, e.g.
+// "HTTPServer" splits into HTTP and Server
+func splitWords(s string) []string {
+	var words []string
+	runes := []rune(s)
+	start := 0
+	for i, r := range runes {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+			if i > start {
+				words = append(words, string(runes[start:i]))
+			}
+			start = i + 1
+			continue
+		}
+		if i > start && unicode.IsUpper(r) {
+			prev := runes[i-1]
+			acronymEnd := unicode.IsUpper(prev) && i+1 < len(runes) && unicode.IsLower(runes[i+1])
+			if unicode.IsLower(prev) || unicode.IsDigit(prev) || acronymEnd {
+				words = append(words, string(runes[start:i]))
+				start = i
+			}
+		}
+	}
+	if start < len(runes) {
+		words = append(words, string(runes[start:]))
+	}
+	return words
+}
 
 var trimSpaceAction = New(Definition[[]byte, []byte]{
 	Doc:          "Trim spaces from input",
@@ -194,7 +292,7 @@ var fromBase64StringAction = New(Definition[[]byte, []byte]{
 })
 
 var parseDateStringAction = New(Definition[[]byte, time.Time]{
-	Doc:          "Parse a date from input, supports ISO 8601/JSON dates and Go time strings",
+	Doc:          "Parse a date from input, supports ISO 8601/JSON dates, Go time strings and unix date output",
 	Names:        []string{"date", "jsondate"},
 	Type:         TransformAction,
 	InputFormat:  TextFormat,
@@ -207,6 +305,8 @@ var parseDateStringAction = New(Definition[[]byte, time.Time]{
 			time.DateTime + " -0700",
 			time.DateTime,
 			time.DateOnly,
+			"Mon 02 Jan 2006 03:04:05 PM MST", // unix date, e.g. Sun 13 Sep 2026 09:08:54 PM EDT
+			"Mon Jan 02 15:04:05 MST 2006",    // unix date, e.g. Sun Sep 13 21:08:54 EDT 2026
 		} {
 			if t, err := time.Parse(layout, s); err == nil {
 				return t, nil
@@ -290,6 +390,17 @@ var isoTimeAction = New(Definition[time.Time, []byte]{
 	},
 })
 
+var humanizeTimeAction = New(Definition[time.Time, []byte]{
+	Doc:          "time to relative humanized text, e.g. '3 days ago'",
+	Names:        []string{"humanize", "ago"},
+	Type:         TransformAction,
+	InputFormat:  TimeFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in time.Time) ([]byte, error) {
+		return []byte(humanize.Time(in)), nil
+	},
+})
+
 // parseDuration parses durations like Go time.ParseDuration (1s, 2h30m, 100ms)
 // and additionally days (2d) and weeks (3w). A leading - or per-segment
 // negative values subtract time.
@@ -360,6 +471,48 @@ func parseDuration(s string) (time.Duration, error) {
 		total = -total
 	}
 	return total, nil
+}
+
+// humanizeDuration renders a duration in human readable units like
+// "2 days 3 hours", zero units are skipped
+func humanizeDuration(d time.Duration) string {
+	if d == 0 {
+		return "0 seconds"
+	}
+	neg := d < 0
+	if neg {
+		d = -d
+	}
+	units := []struct {
+		size time.Duration
+		name string
+	}{
+		{7 * 24 * time.Hour, "week"},
+		{24 * time.Hour, "day"},
+		{time.Hour, "hour"},
+		{time.Minute, "minute"},
+		{time.Second, "second"},
+		{time.Millisecond, "millisecond"},
+		{time.Microsecond, "microsecond"},
+		{time.Nanosecond, "nanosecond"},
+	}
+	var parts []string
+	for _, u := range units {
+		if d >= u.size {
+			n := d / u.size
+			d %= u.size
+			if n == 1 {
+				parts = append(parts, fmt.Sprintf("1 %s", u.name))
+			} else {
+				parts = append(parts, fmt.Sprintf("%d %ss", n, u.name))
+			}
+		}
+	}
+	s := strings.Join(parts, " ")
+	if neg {
+		s = "-" + s
+	}
+	return s
 }
 
 var addDurationTimeAction = New(Definition[time.Time, time.Time]{
@@ -583,6 +736,68 @@ var textListReverseAction = New(Definition[[]string, []string]{
 	},
 })
 
+var textListUniqueAction = New(Definition[[]string, []string]{
+	Doc:          "Deduplicate a list keeping the first occurrence of every element, preserving order",
+	Names:        []string{"unique", "dedupe"},
+	Type:         TransformAction,
+	InputFormat:  TextListFormat,
+	OutputFormat: TextListFormat,
+	Func: func(a Action, in []string) ([]string, error) {
+		seen := make(map[string]struct{}, len(in))
+		out := make([]string, 0, len(in))
+		for _, s := range in {
+			if _, ok := seen[s]; ok {
+				continue
+			}
+			seen[s] = struct{}{}
+			out = append(out, s)
+		}
+		return out, nil
+	},
+})
+
+var textListShuffleAction = New(Definition[[]string, []string]{
+	Doc:          "Shuffle a list randomly",
+	Names:        []string{"shuffle"},
+	Type:         TransformAction,
+	InputFormat:  TextListFormat,
+	OutputFormat: TextListFormat,
+	Func: func(a Action, in []string) ([]string, error) {
+		out := make([]string, len(in))
+		copy(out, in)
+		rand.Shuffle(len(out), func(i, j int) {
+			out[i], out[j] = out[j], out[i]
+		})
+		return out, nil
+	},
+})
+
+var textListFilterAction = New(Definition[[]string, []string]{
+	Doc:          "Filter a list keeping the lines matching a regexp parameter",
+	Names:        []string{"filter"},
+	Type:         TransformAction,
+	InputFormat:  TextListFormat,
+	OutputFormat: TextListFormat,
+	Parameters:   []ActionParameter{{StringParameter, "a regular expression, matching lines are kept"}},
+	Func: func(a Action, in []string) ([]string, error) {
+		p, ok := a.InputParameters()[0].(string)
+		if !ok {
+			return nil, fmt.Errorf("filter parameter is not a string")
+		}
+		re, err := regexp.Compile(p)
+		if err != nil {
+			return nil, err
+		}
+		var out []string
+		for _, s := range in {
+			if re.MatchString(s) {
+				out = append(out, s)
+			}
+		}
+		return out, nil
+	},
+})
+
 var textListCountAction = New(Definition[[]string, []byte]{
 	Doc:          "Count the number of elements in a list",
 	Names:        []string{"count"},
@@ -682,6 +897,36 @@ var textCountLinesAction = New(Definition[[]byte, []byte]{
 			n++
 		}
 		return []byte(strconv.Itoa(n)), nil
+	},
+})
+
+var humanizeDurationTextAction = New(Definition[[]byte, []byte]{
+	Doc:          "Humanize a duration from input, e.g. 2h30m, 2d, 500ms to '2 hours 30 minutes'",
+	Names:        []string{"humanize", "humandur"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in []byte) ([]byte, error) {
+		d, err := parseDuration(string(in))
+		if err != nil {
+			return nil, err
+		}
+		return []byte(humanizeDuration(d)), nil
+	},
+})
+
+var humanBytesAction = New(Definition[[]byte, []byte]{
+	Doc:          "Humanize a byte count from input, e.g. 1048576 to '1.0 MB'",
+	Names:        []string{"humanbytes"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in []byte) ([]byte, error) {
+		n, err := strconv.ParseUint(strings.TrimSpace(string(in)), 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("can't parse %q as a byte count", string(in))
+		}
+		return []byte(humanize.Bytes(n)), nil
 	},
 })
 

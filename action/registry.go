@@ -17,15 +17,16 @@ var (
 )
 
 var all = []Action{
-	upperAction, lowerAction, titleAction, trimSpaceAction, quoteAction, unquoteAction, calcAction,
+	upperAction, lowerAction, titleAction, camelAction, snakeAction, kebabAction, pascalAction,
+	trimSpaceAction, quoteAction, unquoteAction, calcAction,
 	md5HashAction, sha1HashAction, sha256HashAction, sha512HashAction, crc32HashAction, hmacSha256Action,
 	toHexStringAction, fromHexStringAction, toBase64StringAction, fromBase64StringAction,
 	parseDateStringAction, epochTimeAction, addDurationTimeAction,
-	tzTimeAction, isoTimeAction, toJSONDateStringAction, timeEpochAction,
+	tzTimeAction, isoTimeAction, humanizeTimeAction, toJSONDateStringAction, timeEpochAction,
 	spaceTextListAction, pipeTextListAction, splitTextListAction,
 	commaTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction, jsonPrettifyAction,
-	textListSortAction, textListReverseAction,
-	textListFirstAction, textListLastAction, textListIndexAction, textListCountAction, textCountAction, textCountLinesAction, unescapeTextAction, stripWhitespaceAction, pipeCommandAction,
+	textListSortAction, textListReverseAction, textListUniqueAction, textListShuffleAction, textListFilterAction,
+	textListFirstAction, textListLastAction, textListIndexAction, textListCountAction, textCountAction, textCountLinesAction, humanizeDurationTextAction, humanBytesAction, unescapeTextAction, stripWhitespaceAction, pipeCommandAction,
 	parseCSVAction, tableSortColumnAction, tableToCSVAction,
 }
 
@@ -34,7 +35,7 @@ func init() {
 }
 
 // generatorActions ignore their input and can be applied to any data
-var generatorActions = []Action{uuidV4Action, uuidV7Action, nowTimeAction, repeatLastAction, newCalcAction}
+var generatorActions = []Action{uuidV4Action, uuidV7Action, nowTimeAction, repeatLastAction, newCalcAction, passwordAction}
 
 // editorActions edit the data with an external editor, they convert any
 // data to its string representation first

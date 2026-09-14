@@ -1,7 +1,10 @@
 package action
 
 import (
+	"crypto/rand"
 	"fmt"
+	"math/big"
+	"strings"
 	"time"
 	"uuid"
 )
@@ -70,6 +73,95 @@ var nowTimeAction = newGenerator(Definition[[]byte, time.Time]{
 	OutputFormat: TimeFormat,
 	Func: func(a Action, in []byte) (time.Time, error) {
 		return time.Now(), nil
+	},
+})
+
+const maxPasswordLength = 4096
+
+const (
+	passwordLetters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	passwordDigits  = "0123456789"
+	passwordSymbols = "!@#$%^&*-_=+?"
+)
+
+// randInt returns a cryptographically secure random int in [0, n)
+func randInt(n int) (int, error) {
+	v, err := rand.Int(rand.Reader, big.NewInt(int64(n)))
+	if err != nil {
+		return 0, err
+	}
+	return int(v.Int64()), nil
+}
+
+var passwordAction = newGenerator(Definition[[]byte, []byte]{
+	Doc:          "New password, create a random password, options: 'digits' and/or 'symbols' to include those characters, empty for letters only",
+	Names:        []string{"password", "passwd"},
+	Type:         TransformAction,
+	InputFormat:  TextFormat,
+	OutputFormat: TextFormat,
+	Parameters: []ActionParameter{
+		{IntParameter, "the password length"},
+		{StringParameter, "options, 'digits' and/or 'symbols' to include those characters, empty for letters only"},
+	},
+	Func: func(a Action, in []byte) ([]byte, error) {
+		params := a.InputParameters()
+		n, ok := params[0].(int)
+		if !ok {
+			return nil, fmt.Errorf("password parameter is not an int")
+		}
+		opts, _ := params[1].(string)
+
+		withDigits, withSymbols := false, false
+		for _, o := range strings.FieldsFunc(opts, func(r rune) bool { return r == ',' || r == ' ' }) {
+			switch strings.ToLower(o) {
+			case "digits", "d":
+				withDigits = true
+			case "symbols", "s":
+				withSymbols = true
+			default:
+				return nil, fmt.Errorf("unknown password option %q", o)
+			}
+		}
+
+		if n < 1 || n > maxPasswordLength {
+			return nil, fmt.Errorf("password length must be between 1 and %d", maxPasswordLength)
+		}
+
+		classes := []string{passwordLetters}
+		if withDigits {
+			classes = append(classes, passwordDigits)
+		}
+		if withSymbols {
+			classes = append(classes, passwordSymbols)
+		}
+		if n < len(classes) {
+			return nil, fmt.Errorf("password length must be at least %d to include all the options", len(classes))
+		}
+
+		pool := strings.Join(classes, "")
+		out := make([]byte, n)
+		for i := range out {
+			ri, err := randInt(len(pool))
+			if err != nil {
+				return nil, err
+			}
+			out[i] = pool[ri]
+		}
+		// make sure every selected class is present
+		for _, c := range classes {
+			if !strings.ContainsAny(string(out), c) {
+				pi, err := randInt(n)
+				if err != nil {
+					return nil, err
+				}
+				ci, err := randInt(len(c))
+				if err != nil {
+					return nil, err
+				}
+				out[pi] = c[ci]
+			}
+		}
+		return out, nil
 	},
 })
 
