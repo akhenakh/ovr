@@ -35,6 +35,10 @@ type AppState struct {
 	filterId ContainerId
 	// set to re-assert focus on the filter field during the next build pass
 	refocusFilter bool
+	// paste popup: shown at startup when no input came from a file, stdin,
+	// or the clipboard, and reopenable from the toolbar
+	pasteOpen bool
+	pasteBuf  string
 }
 
 var appData = &AppState{}
@@ -314,6 +318,51 @@ func reloadInput(in []byte) {
 	setStatus(fmt.Sprintf("input reloaded (%d bytes)", len(in)), false)
 }
 
+// openPaste shows the paste popup with a fresh buffer.
+func openPaste() {
+	appData.pasteBuf = ""
+	appData.pasteOpen = true
+}
+
+// closePaste dismisses the paste popup without loading anything.
+func closePaste() {
+	appData.pasteBuf = ""
+	appData.pasteOpen = false
+}
+
+// loadPaste turns the popup buffer into the app input.
+func loadPaste() {
+	if strings.TrimSpace(appData.pasteBuf) == "" {
+		setStatus("nothing to load, paste some text first", true)
+		return
+	}
+	in := []byte(appData.pasteBuf)
+	closePaste()
+	setInput(in)
+	setStatus(fmt.Sprintf("input loaded (%d bytes)", len(in)), false)
+}
+
+// pasteModal renders the paste-input dialog over the app.
+func pasteModal() {
+	Modal(640, closePaste, func() {
+		Label("Paste input", FontSize(16), FontWeight(WeightBold), TextColorVec(theme.headerTitle))
+		themedTextInput(&appData.pasteBuf, TextInputAttrs{
+			Placeholder: "paste text here…",
+			Rows:        12,
+			Wrap:        true,
+		})
+		Container(Attrs(Row, Expand, CrossMid, Gap(8)), func() {
+			Filler(1)
+			if Button(NoIcon, "Cancel") {
+				closePaste()
+			}
+			if Button(SymDownload, "Load") {
+				loadPaste()
+			}
+		})
+	})
+}
+
 func quitHint() string {
 	if PrimaryMod() == ModCmd {
 		return "Cmd+Q quits"
@@ -337,31 +386,35 @@ func dataSummary() string {
 }
 
 func RootView() {
-	switch GetFrameInput().Key {
-	case KeyEnter:
-		if appData.listFocus {
-			applySelected()
-		} else {
-			// Enter in the filter field activates the actions list
-			activateList()
-		}
-	case KeyTab:
-		// Tab toggles between the filter field and the actions list
-		if appData.listFocus {
+	// while the paste popup is open it owns the keyboard (the Modal dismiss
+	// gestures and the text field handle the keys themselves)
+	if !appData.pasteOpen {
+		switch GetFrameInput().Key {
+		case KeyEnter:
+			if appData.listFocus {
+				applySelected()
+			} else {
+				// Enter in the filter field activates the actions list
+				activateList()
+			}
+		case KeyTab:
+			// Tab toggles between the filter field and the actions list
+			if appData.listFocus {
+				exitListFocus()
+			} else {
+				focusList()
+			}
+		case KeyDown, KeyUp:
+			if appData.listFocus {
+				moveSelection(GetFrameInput().Key == KeyDown)
+			}
+		case KeyEscape:
+			appData.search = ""
 			exitListFocus()
-		} else {
-			focusList()
-		}
-	case KeyDown, KeyUp:
-		if appData.listFocus {
-			moveSelection(GetFrameInput().Key == KeyDown)
-		}
-	case KeyEscape:
-		appData.search = ""
-		exitListFocus()
-	case KeyQ:
-		if ActiveCombo() == Combo(KeyQ, PrimaryMod()) {
-			quitApp(0)
+		case KeyQ:
+			if ActiveCombo() == Combo(KeyQ, PrimaryMod()) {
+				quitApp(0)
+			}
 		}
 	}
 
@@ -375,6 +428,10 @@ func RootView() {
 		})
 		StatusBar()
 	})
+
+	if appData.pasteOpen {
+		pasteModal()
+	}
 }
 
 func Header() {
@@ -402,6 +459,9 @@ func Toolbar() {
 		}
 		if Button(SymRefresh, "Reload") {
 			reloadClipboard()
+		}
+		if Button(SymDownload, "Paste") {
+			openPaste()
 		}
 		if Button(NoIcon, "Apply") {
 			applySelected()

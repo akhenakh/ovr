@@ -42,6 +42,57 @@ Flags:
 On exit, ovr prints the applied action chain, eg. `Split(" "),Index(2),Upper`,
 followed by the result.
 
+## ovrui
+
+`ovrui` is a GUI companion built with [shirei](https://github.com/hasenj/go-shirei):
+
+```sh
+go build -o ovrui ./cmd/ovrui
+```
+
+Input is resolved in this order:
+
+- `-f <filename>` read input from a file
+- piped stdin, eg. `cat data.txt | ovrui`
+- the clipboard
+
+When none of those yield anything (empty clipboard, CGO-free builds without
+clipboard access, or the browser/wasm build), a paste popup opens so the input
+can be pasted directly. The popup can be reopened any time with the **Paste**
+toolbar button.
+
+## Web (wasm)
+
+ovrui compiles to GOOS=js/GOARCH=wasm and runs in the browser on shirei's
+jsbackend (software renderer over a canvas, no plugins):
+
+```sh
+task web          # build a static site into dist/ (index.html, main.wasm, wasm_exec.js, .headers, embed.js)
+task web-run      # build into a temp dir, serve http://127.0.0.1:8787/ and open a browser
+```
+
+or without task:
+
+```sh
+go run go.hasen.dev/shirei/cmd/shirei_web -o dist ./cmd/ovrui
+go run go.hasen.dev/shirei/cmd/shirei_web -run ./cmd/ovrui
+```
+
+Copy `dist/` to any static host that honors the emitted `.headers`
+(COOP+COEP). `task web WEB_TAGS=geo` enables the geo actions in the wasm
+build. The browser clipboard is only reachable through the paste popup and
+the Copy Output button.
+
+## Development
+
+Tasks are defined in `Taskfile.yml` ([go-task](https://taskfile.dev)):
+
+- `task build` build both binaries into `bin/`
+- `task check` vet + tests + build (pre-commit gate)
+- `task test`, `task vet`, `task fmt`, `task fix`, `task tidy`
+- `task run -- <args>` / `task run-ui -- <args>` run the CLI/GUI from source
+- `task gen-tznames` regenerate `action/tznames.go`
+
 ## Features
 - [X] Fuzzy search for block names
 - [X] Apply actions, cancel actions using backspace

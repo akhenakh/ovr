@@ -1,6 +1,9 @@
+//go:build !js
+
 // Package clipboard wraps golang.design/x/clipboard, which panics in
 // CGO-free builds instead of returning errors. Every function here
 // recovers those panics so callers can degrade gracefully.
+// On js/wasm builds a stub (clipboard_js.go) replaces this file.
 package clipboard
 
 import (

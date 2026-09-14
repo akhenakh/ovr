@@ -216,7 +216,7 @@ func (a *repeatAction) Transform(in *Data) (*Data, error) {
 
 	l := make([]string, 0, n)
 	cur := in
-	for i := 0; i < n; i++ {
+	for range n {
 		nd, err := last.Transform(cur)
 		if err != nil {
 			return nil, err

@@ -154,7 +154,7 @@ func newModel(in []byte) model {
 	// Make initial list of actions
 	actions := r.ActionsForData(out)
 	items := make([]list.Item, len(actions))
-	for i := 0; i < len(actions); i++ {
+	for i := range actions {
 		items[i] = actions[i]
 	}
 
@@ -306,7 +306,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			actions := m.r.ActionsForData(m.out)
 			items := make([]list.Item, len(actions))
-			for i := 0; i < len(actions); i++ {
+			for i := range actions {
 				items[i] = actions[i]
 			}
 			m.list.SetItems(items)
@@ -682,7 +682,7 @@ func (m *model) setOutput(out *action.Data) {
 
 	actions := m.r.ActionsForData(m.out)
 	items := make([]list.Item, len(actions))
-	for i := 0; i < len(actions); i++ {
+	for i := range actions {
 		items[i] = actions[i]
 	}
 	m.list.SetItems(items)

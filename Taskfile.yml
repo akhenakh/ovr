@@ -1,0 +1,128 @@
+version: "3"
+
+vars:
+  BIN: bin
+  LDFLAGS: -s -w
+  # ovrui's darwin backend (shirei cocoabackend) and the clipboard need cgo;
+  # keep the toolchain default so `task build` and plain `go build` agree.
+  CGO_ENABLED:
+    sh: go env CGO_ENABLED
+  # extra build tags, eg. `task build TAGS=geo`
+  TAGS: ""
+  # web/wasm output directory
+  WEB_OUT: dist
+  # extra tags for the wasm build, forwarded via GOFLAGS (shirei_web has no
+  # -tags flag), eg. `task web WEB_TAGS=geo`
+  WEB_TAGS: ""
+
+tasks:
+  build:
+    desc: Build both binaries (ovr + ovrui) into bin/
+    cmds:
+      - task: build-ovr
+      - task: build-ui
+
+  build-ovr:
+    desc: Build the CLI into bin/ovr
+    cmds:
+      - CGO_ENABLED={{.CGO_ENABLED}} go build -trimpath {{if .TAGS}}-tags {{.TAGS}} {{end}}-ldflags "{{.LDFLAGS}}" -o {{.BIN}}/ovr ./cmd/ovr
+    sources:
+      - cmd/ovr/*.go
+      - action/*.go
+      - internal/**/*.go
+      - go.mod
+      - go.sum
+    generates:
+      - "{{.BIN}}/ovr"
+
+  build-ui:
+    desc: Build the GUI into bin/ovrui
+    cmds:
+      - CGO_ENABLED={{.CGO_ENABLED}} go build -trimpath {{if .TAGS}}-tags {{.TAGS}} {{end}}-ldflags "{{.LDFLAGS}}" -o {{.BIN}}/ovrui ./cmd/ovrui
+    sources:
+      - cmd/ovrui/*.go
+      - cmd/ovrui/*.ttf
+      - action/*.go
+      - internal/**/*.go
+      - go.mod
+      - go.sum
+    generates:
+      - "{{.BIN}}/ovrui"
+
+  test:
+    desc: Run all tests
+    cmds:
+      - go test ./...
+
+  vet:
+    desc: Run go vet
+    cmds:
+      - go vet ./...
+
+  fix:
+    desc: Apply go fix modernizations
+    cmds:
+      - go fix ./...
+
+  fmt:
+    desc: Format all Go files
+    cmds:
+      - gofmt -l -w .
+
+  check:
+    desc: vet + fix-check + test + build (pre-commit gate)
+    deps: [vet]
+    cmds:
+      - go fix ./...
+      - task: test
+      - task: build
+
+  tidy:
+    desc: Reconcile go.mod/go.sum
+    cmds:
+      - go mod tidy
+
+  run:
+    desc: Run the CLI — pass args after -- eg. `task run -- -s < data.txt`
+    cmds:
+      - go run ./cmd/ovr {{.CLI_ARGS}}
+
+  run-ui:
+    desc: Run the GUI — pass args after -- eg. `task run-ui -- -f data.txt`
+    cmds:
+      - go run ./cmd/ovrui {{.CLI_ARGS}}
+
+  web:
+    desc: Build the ovrui static web site (index.html, main.wasm, wasm_exec.js) into {{.WEB_OUT}}/
+    cmds:
+      - "{{if .WEB_TAGS}}GOFLAGS=-tags={{.WEB_TAGS}} {{end}}go run go.hasen.dev/shirei/cmd/shirei_web -o {{.WEB_OUT}} ./cmd/ovrui"
+    sources:
+      - cmd/ovrui/*.go
+      - cmd/ovrui/*.ttf
+      - action/*.go
+      - internal/**/*.go
+      - go.mod
+      - go.sum
+    generates:
+      - "{{.WEB_OUT}}/main.wasm"
+
+  web-run:
+    desc: Build and serve the web build on http://127.0.0.1:8787/ and open a browser
+    cmds:
+      - go run go.hasen.dev/shirei/cmd/shirei_web -run ./cmd/ovrui {{.CLI_ARGS}}
+
+  gen-tznames:
+    desc: Regenerate action/tznames.go from the Go toolchain zoneinfo
+    cmds:
+      - go run ./tools/gen-tznames
+
+  install-bin:
+    desc: Install both binaries into $GOPATH/bin
+    cmds:
+      - CGO_ENABLED={{.CGO_ENABLED}} go install -trimpath {{if .TAGS}}-tags {{.TAGS}} {{end}}./cmd/ovr
+      - CGO_ENABLED={{.CGO_ENABLED}} go install -trimpath {{if .TAGS}}-tags {{.TAGS}} {{end}}./cmd/ovrui
+
+  clean:
+    desc: Remove build artifacts
+    cmds:
+      - rm -rf bin dist

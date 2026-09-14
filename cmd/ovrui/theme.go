@@ -215,7 +215,7 @@ var themes = []*uiTheme{
 }
 
 // theme is the active theme
-var theme = themes[1]
+var theme = themes[0]
 
 func init() {
 	// apply the stock-widget chrome for the default theme; loadConfig may

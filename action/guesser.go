@@ -38,10 +38,7 @@ func GuessContentType(v []byte) string {
 
 func GuessFormatIsBinary(v []byte) bool {
 	// look at the first 512 bytes
-	l := 512
-	if len(v) < l {
-		l = len(v)
-	}
+	l := min(len(v), 512)
 
 	b := v[:l]
 

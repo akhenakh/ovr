@@ -19,4 +19,6 @@ cmd/ovrui/ovrui
 debug.log
 /ovr
 /ovrui
-cmd/ovrui/ovrui
+/bin/
+/dist/
+/.task/
