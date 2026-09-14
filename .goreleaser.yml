@@ -5,10 +5,9 @@ before:
     - go mod tidy
 
 builds:
-  # darwin/arm64 needs cgo for the clipboard (golang.design/x/clipboard
-  # panics at runtime when built with CGO_ENABLED=0); cross compiled with
-  # the osxcross toolchain from goreleaser-cross, same as ovrui.
-  # darwin/amd64 stays CGO-free: osxcross only provides the arm64 SDK.
+  # everything is CGO-free: shirei's desktop backends use purego, and
+  # golang.design/x/clipboard v0.9 is cgo-free on all desktop platforms,
+  # so both binaries cross compile from linux without an SDK
   - id: ovr
     main: ./cmd/ovr
     binary: ovr
@@ -22,18 +21,7 @@ builds:
     goarch:
       - amd64
       - arm64
-    overrides:
-      - goos: darwin
-        goarch: arm64
-        env:
-          - CGO_ENABLED=1
-          - CC=oa64-clang
-          - CXX=oa64-clang++
-          - MACOSX_DEPLOYMENT_TARGET=13.0
 
-  # ovrui's macOS backend (shirei cocoabackend) requires cgo, cross compiled
-  # with the osxcross toolchain from goreleaser-cross (see release.yml).
-  # linux builds are CGO-free; clipboard reports unavailable at runtime.
   - id: ovrui
     main: ./cmd/ovrui
     binary: ovrui
@@ -47,21 +35,6 @@ builds:
     goarch:
       - amd64
       - arm64
-    ignore:
-      # osxcross from goreleaser-cross only supports darwin/arm64
-      - goos: darwin
-        goarch: amd64
-    overrides:
-      - goos: darwin
-        goarch: arm64
-        env:
-          - CGO_ENABLED=1
-          - CC=oa64-clang
-          - CXX=oa64-clang++
-          # Go's darwin/arm64 objects target macOS 13; without this the
-          # linker defaults to 11.0 and fails with undefined
-          # ___isPlatformVersionAtLeast
-          - MACOSX_DEPLOYMENT_TARGET=13.0
 
 archives:
   # separate archives per build: goreleaser requires the same binary count

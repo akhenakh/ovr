@@ -14,9 +14,9 @@ require (
 	github.com/peterstace/simplefeatures v0.59.0
 	github.com/stretchr/testify v1.12.1
 	github.com/tidwall/gjson v1.19.0
-	go.hasen.dev/shirei v0.6.7
+	go.hasen.dev/shirei v0.6.9
 	go.yaml.in/yaml/v3 v3.0.5
-	golang.design/x/clipboard v0.7.1-0.20230416133002-b50badc062a5
+	golang.design/x/clipboard v0.9.0
 	golang.org/x/text v0.41.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -46,7 +46,7 @@ require (
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/dboslee/lru v0.0.1 // indirect
-	github.com/ebitengine/purego v0.10.1 // indirect
+	github.com/ebitengine/purego v0.11.0 // indirect
 	github.com/fsnotify/fsnotify v1.10.1 // indirect
 	github.com/go-fonts/latin-modern v0.3.3 // indirect
 	github.com/go-text/typesetting v0.3.4 // indirect
@@ -73,7 +73,9 @@ require (
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yuin/goldmark v1.8.5 // indirect
-	go.hasen.dev/generic v0.1.7 // indirect
+	go.hasen.dev/generic v0.1.8 // indirect
+	go.hasen.dev/udplib v0.1.0 // indirect
+	golang.design/x/x11 v0.2.0 // indirect
 	golang.org/x/exp/shiny v0.0.0-20260820142414-ca536658362e // indirect
 	golang.org/x/image v0.45.0 // indirect
 	golang.org/x/mobile v0.0.0-20260812174124-2f419b2fb945 // indirect
@@ -87,5 +89,3 @@ require (
 	modernc.org/token v1.1.0 // indirect
 	star-tex.org/x/tex v0.7.1 // indirect
 )
-
-replace golang.design/x/clipboard => github.com/akhenakh/clipboard v0.0.0-20240107160805-bc9b71402ddf

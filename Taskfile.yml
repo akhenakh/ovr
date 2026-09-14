@@ -3,11 +3,7 @@ version: "3"
 vars:
   BIN: bin
   LDFLAGS: -s -w
-  # ovrui's darwin backend (shirei cocoabackend) and the clipboard need cgo;
-  # keep the toolchain default so `task build` and plain `go build` agree.
-  CGO_ENABLED:
-    sh: go env CGO_ENABLED
-  # extra build tags, eg. `task build TAGS=geo`
+  # everything builds CGO-free (shirei purego backends, golang.design/x/clipboard v0.9)
   TAGS: ""
   # web/wasm output directory
   WEB_OUT: dist
@@ -25,7 +21,7 @@ tasks:
   build-ovr:
     desc: Build the CLI into bin/ovr
     cmds:
-      - CGO_ENABLED={{.CGO_ENABLED}} go build -trimpath {{if .TAGS}}-tags {{.TAGS}} {{end}}-ldflags "{{.LDFLAGS}}" -o {{.BIN}}/ovr ./cmd/ovr
+      - CGO_ENABLED=0 go build -trimpath {{if .TAGS}}-tags {{.TAGS}} {{end}}-ldflags "{{.LDFLAGS}}" -o {{.BIN}}/ovr ./cmd/ovr
     sources:
       - cmd/ovr/*.go
       - action/*.go
@@ -38,7 +34,7 @@ tasks:
   build-ui:
     desc: Build the GUI into bin/ovrui
     cmds:
-      - CGO_ENABLED={{.CGO_ENABLED}} go build -trimpath {{if .TAGS}}-tags {{.TAGS}} {{end}}-ldflags "{{.LDFLAGS}}" -o {{.BIN}}/ovrui ./cmd/ovrui
+      - CGO_ENABLED=0 go build -trimpath {{if .TAGS}}-tags {{.TAGS}} {{end}}-ldflags "{{.LDFLAGS}}" -o {{.BIN}}/ovrui ./cmd/ovrui
     sources:
       - cmd/ovrui/*.go
       - cmd/ovrui/*.ttf
@@ -119,8 +115,8 @@ tasks:
   install-bin:
     desc: Install both binaries into $GOPATH/bin
     cmds:
-      - CGO_ENABLED={{.CGO_ENABLED}} go install -trimpath {{if .TAGS}}-tags {{.TAGS}} {{end}}./cmd/ovr
-      - CGO_ENABLED={{.CGO_ENABLED}} go install -trimpath {{if .TAGS}}-tags {{.TAGS}} {{end}}./cmd/ovrui
+      - CGO_ENABLED=0 go install -trimpath {{if .TAGS}}-tags {{.TAGS}} {{end}}./cmd/ovr
+      - CGO_ENABLED=0 go install -trimpath {{if .TAGS}}-tags {{.TAGS}} {{end}}./cmd/ovrui
 
   clean:
     desc: Remove build artifacts

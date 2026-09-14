@@ -26,21 +26,17 @@ var all = []Action{
 	spaceTextListAction, pipeTextListAction, splitTextListAction,
 	commaTextListAction, linesTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction, jsonPrettifyAction,
 	textListSortAction, textListReverseAction, textListUniqueAction, textListShuffleAction, textListFilterAction, textListToJSONAction, textListToYAMLAction,
-	textListFirstAction, textListLastAction, textListIndexAction, textListCountAction, textCountAction, textCountLinesAction, humanizeDurationTextAction, humanBytesAction, unescapeTextAction, stripWhitespaceAction, pipeCommandAction,
+	textListFirstAction, textListLastAction, textListIndexAction, textListCountAction, textCountAction, textCountLinesAction, humanizeDurationTextAction, humanBytesAction, unescapeTextAction, stripWhitespaceAction,
 	dictAction, dictGetAction, dictToJSONAction, dictKeysAction,
 	parseCSVAction, tableSortColumnAction, tableToCSVAction,
 }
 
 func init() {
-	all = slices.Concat(all, timezoneActions)
+	all = slices.Concat(all, timezoneActions, execActions)
 }
 
 // generatorActions ignore their input and can be applied to any data
 var generatorActions = []Action{uuidV4Action, uuidV7Action, nowTimeAction, repeatLastAction, newCalcAction, passwordAction}
-
-// editorActions edit the data with an external editor, they convert any
-// data to its string representation first
-var editorActions = []Action{editAction}
 
 // inputFormats is every format generator actions are registered for,
 // text list data already offers text to text actions so it is not needed there

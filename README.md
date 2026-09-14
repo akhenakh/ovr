@@ -56,10 +56,10 @@ Input is resolved in this order:
 - piped stdin, eg. `cat data.txt | ovrui`
 - the clipboard
 
-When none of those yield anything (empty clipboard, CGO-free builds without
-clipboard access, or the browser/wasm build), a paste popup opens so the input
-can be pasted directly. The popup can be reopened any time with the **Paste**
-toolbar button.
+When none of those yield anything (empty clipboard, unavailable clipboard,
+or the browser/wasm build), a paste popup opens so the input can be pasted
+directly. The popup can be reopened any time with the **Paste** toolbar
+button.
 
 ## Web (wasm)
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -10,7 +11,7 @@ import (
 	. "go.hasen.dev/shirei"
 	app "go.hasen.dev/shirei/app"
 
-	"github.com/akhenakh/ovr/internal/clipboard"
+	"golang.design/x/clipboard"
 )
 
 func main() {
@@ -81,9 +82,9 @@ func initialInput() ([]byte, bool) {
 	}
 
 	// 3. clipboard
-	initClipboard()
+	clipboardReady = clipboard.Init() == nil
 	if clipboardReady {
-		if b := clipboard.Read(clipboard.FmtText); len(bytes.TrimSpace(b)) > 0 {
+		if b, err := clipboard.Read(context.Background(), clipboard.FmtText); err == nil && len(bytes.TrimSpace(b)) > 0 {
 			return b, true
 		}
 	}
@@ -99,14 +100,15 @@ func stdinPiped() bool {
 
 var clipboardReady bool
 
-func initClipboard() {
-	clipboardReady = clipboard.Init() == nil
-}
-
 func reloadClipboard() {
 	if !clipboardReady {
 		setStatus("clipboard not available", true)
 		return
 	}
-	reloadInput(clipboard.Read(clipboard.FmtText))
+	b, err := clipboard.Read(context.Background(), clipboard.FmtText)
+	if err != nil {
+		setStatus("could not read the clipboard: "+err.Error(), true)
+		return
+	}
+	reloadInput(b)
 }

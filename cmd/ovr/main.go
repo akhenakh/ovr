@@ -1,13 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/akhenakh/ovr/internal/clipboard"
+	"golang.design/x/clipboard"
 )
 
 func main() {
@@ -28,10 +29,10 @@ func main() {
 		defer f.Close()
 	}
 
-	err := clipboard.Init()
+	clipErr := clipboard.Init()
 	// Only fail on clipboard init error if we absolutely need it (no input file/stdin provided)
-	if err != nil && *inputFile == "" && !*readStdin {
-		fmt.Fprintf(os.Stderr, "Clipboard unavailable: %v\nUse -s to read from stdin or -f <filename> to read from a file.\n", err)
+	if clipErr != nil && *inputFile == "" && !*readStdin {
+		fmt.Fprintf(os.Stderr, "Clipboard unavailable: %v\nUse -s to read from stdin or -f <filename> to read from a file.\n", clipErr)
 		os.Exit(1)
 	}
 
@@ -48,8 +49,8 @@ func main() {
 	} else if *readStdin {
 		stdin, _ := io.ReadAll(os.Stdin)
 		input = stdin
-	} else if clipboard.Available() {
-		input = clipboard.Read(clipboard.FmtText)
+	} else if clipErr == nil {
+		input, _ = clipboard.Read(context.Background(), clipboard.FmtText)
 	}
 
 	p := tea.NewProgram(newModel(input))
@@ -78,7 +79,7 @@ func main() {
 			fmt.Printf("%s\n---\n%s\n", m.out.StackString(), finalOutput)
 		}
 		if *inputFile == "" && !*readStdin {
-			clipboard.Write(clipboard.FmtText, []byte(finalOutput))
+			_, _ = clipboard.Write(context.Background(), clipboard.FmtText, []byte(finalOutput))
 		}
 	}
 }
