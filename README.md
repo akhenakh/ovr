@@ -63,8 +63,8 @@ followed by the result.
 - [X] Text
 - [X] Lines (text lists)
 - [X] CSV (table of rows)
-- JSON
-- YAML
+- [X] JSON, as a dict (`dict`)
+- [X] YAML, as a dict (`dict`)
 - TOML
 - Images
 - [X] Time
@@ -95,6 +95,7 @@ followed by the result.
 - [X] count inputs
 - [X] split text into a list with any separator (`split`), by comma, space, pipe
 - [X] list actions: sort, reverse, unique, shuffle, filter, first, last, index, count, join
+- [X] list to JSON/YAML (`tojson`, `toyaml`)
 - [X] time parse transform, epoch
 - [X] date parsing: ISO 8601/JSON dates, Go time strings, unix `date` command output like `Sun 13 Sep 2026 09:08:54 PM EDT` (`date`)
 - [X] time to ISO, epoch, JSON date string
@@ -108,6 +109,7 @@ followed by the result.
 - [ ] known payloads (AWS...), logs severity, golang stack, java stack...
 - [X] JSON Minify 
 - [X] CSV: parse into a table (`csv`), sort by a column (`sortcol`), output as csv (`tocsv`)
+- [X] Dict: parse JSON/YAML objects (`dict`), filter with gjson paths (`get`/`gjson`), keys as a list (`keys`), pretty JSON output (`tojson`)
 - [X] strip all whitespace (`strip`)
 - [ ] sort yaml
 - [ ] Add/Set value
@@ -132,7 +134,7 @@ followed by the result.
 - [ ] Filter fields, select values
 - [ ] JMESPath
 - [ ] Regexp
-- [ ] https://github.com/tidwall/gjson
+- [X] gjson path filtering on dicts (`get`)
 
 ## Create Data (not from stdin or pasteboard)
 - [X] Time Now (`now`)

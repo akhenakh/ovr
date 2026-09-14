@@ -120,6 +120,16 @@ func setInput(in []byte) {
 		}
 	}
 
+	// if the input looks like a JSON object, start with dict data so the
+	// gjson actions are offered right away
+	if action.GuessDict(in) {
+		if a, ok := r.ActionByName(action.TextFormat, "dict"); ok {
+			if d, err := a.Transform(action.NewDataText(in)); err == nil {
+				out = d
+			}
+		}
+	}
+
 	appData.in = in
 	appData.out = out
 	appData.selected = nil

@@ -25,8 +25,9 @@ var all = []Action{
 	tzTimeAction, isoTimeAction, humanizeTimeAction, toJSONDateStringAction, timeEpochAction,
 	spaceTextListAction, pipeTextListAction, splitTextListAction,
 	commaTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction, jsonPrettifyAction,
-	textListSortAction, textListReverseAction, textListUniqueAction, textListShuffleAction, textListFilterAction,
+	textListSortAction, textListReverseAction, textListUniqueAction, textListShuffleAction, textListFilterAction, textListToJSONAction, textListToYAMLAction,
 	textListFirstAction, textListLastAction, textListIndexAction, textListCountAction, textCountAction, textCountLinesAction, humanizeDurationTextAction, humanBytesAction, unescapeTextAction, stripWhitespaceAction, pipeCommandAction,
+	dictAction, dictGetAction, dictToJSONAction, dictKeysAction,
 	parseCSVAction, tableSortColumnAction, tableToCSVAction,
 }
 
@@ -43,7 +44,7 @@ var editorActions = []Action{editAction}
 
 // inputFormats is every format generator actions are registered for,
 // text list data already offers text to text actions so it is not needed there
-var inputFormats = []Format{TextFormat, BinFormat, TimeFormat, JSONFormat, GeoFormat}
+var inputFormats = []Format{TextFormat, BinFormat, TimeFormat, DictFormat, GeoFormat}
 
 // rebinder is implemented by actions that can register for another input format
 type rebinder interface {

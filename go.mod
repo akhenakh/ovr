@@ -13,7 +13,9 @@ require (
 	github.com/golang/geo v0.0.0-20260818125358-b200a1149890
 	github.com/peterstace/simplefeatures v0.59.0
 	github.com/stretchr/testify v1.12.1
+	github.com/tidwall/gjson v1.19.0
 	go.hasen.dev/shirei v0.6.7
+	go.yaml.in/yaml/v3 v3.0.5
 	golang.design/x/clipboard v0.7.1-0.20230416133002-b50badc062a5
 	golang.org/x/text v0.41.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -67,10 +69,11 @@ require (
 	github.com/tdewolff/font v0.0.0-20260822205238-d0d2f004b117 // indirect
 	github.com/tdewolff/minify/v2 v2.24.17 // indirect
 	github.com/tdewolff/parse/v2 v2.8.16 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yuin/goldmark v1.8.5 // indirect
 	go.hasen.dev/generic v0.1.7 // indirect
-	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/exp/shiny v0.0.0-20260820142414-ca536658362e // indirect
 	golang.org/x/image v0.45.0 // indirect
 	golang.org/x/mobile v0.0.0-20260812174124-2f419b2fb945 // indirect

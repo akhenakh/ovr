@@ -1,6 +1,7 @@
 package action
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -40,6 +41,10 @@ func NewDataTime(t time.Time) *Data {
 	return &Data{Value: t, Format: TimeFormat}
 }
 
+func NewDataDict(m map[string]any) *Data {
+	return &Data{Value: m, Format: DictFormat}
+}
+
 func NewDataGeom(g geom.Geometry) *Data {
 	return &Data{Value: g, Format: GeoFormat}
 }
@@ -64,8 +69,8 @@ func (d *Data) StoreGeomValue(g geom.Geometry, a Action) *Data {
 	return &Data{Value: g, Stack: append(d.Stack, a), Format: GeoFormat}
 }
 
-func (d *Data) StoreJSONValue(v any, a Action) *Data {
-	return &Data{Value: v, Stack: append(d.Stack, a), Format: JSONFormat}
+func (d *Data) StoreDictValue(m map[string]any, a Action) *Data {
+	return &Data{Value: m, Stack: append(d.Stack, a), Format: DictFormat}
 }
 
 // Undo removed the last actions if any
@@ -98,6 +103,16 @@ func (d *Data) String() string {
 	case TimeFormat:
 		t := d.Value.(time.Time)
 		return t.String()
+	case DictFormat:
+		m, ok := d.Value.(map[string]any)
+		if !ok {
+			return fmt.Sprintf("%v", d.Value)
+		}
+		b, err := json.MarshalIndent(m, "", "  ")
+		if err != nil {
+			return fmt.Sprintf("%v", d.Value)
+		}
+		return string(b)
 	case GeoFormat:
 		g := d.Value.(geom.Geometry)
 		return g.AsText()

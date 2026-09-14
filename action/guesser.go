@@ -1,6 +1,8 @@
 package action
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
 	"regexp"
 )
@@ -11,6 +13,13 @@ var wktRe = regexp.MustCompile(`(?i)^\s*(POINT|LINESTRING|POLYGON|MULTIPOINT|MUL
 // like POINT(-0.4539761 48.0930043)
 func GuessWKT(v []byte) bool {
 	return wktRe.Match(v)
+}
+
+// GuessDict reports whether the input looks like a JSON object,
+// YAML is not guessed as almost any text is valid YAML
+func GuessDict(v []byte) bool {
+	s := bytes.TrimSpace(v)
+	return len(s) > 1 && s[0] == '{' && s[len(s)-1] == '}' && json.Valid(s)
 }
 
 func GuessFormat(v []byte) Format {

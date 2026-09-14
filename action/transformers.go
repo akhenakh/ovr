@@ -27,6 +27,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/dustin/go-humanize"
+	"go.yaml.in/yaml/v3"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -689,6 +690,28 @@ var textListJoinNewLineAction = New(Definition[[]string, []byte]{
 	OutputFormat: TextFormat,
 	Func: func(a Action, in []string) ([]byte, error) {
 		return []byte(strings.Join(in, "\n")), nil
+	},
+})
+
+var textListToJSONAction = New(Definition[[]string, []byte]{
+	Doc:          "Write a list as a JSON array",
+	Names:        []string{"tojson"},
+	Type:         TransformAction,
+	InputFormat:  TextListFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in []string) ([]byte, error) {
+		return json.Marshal(in)
+	},
+})
+
+var textListToYAMLAction = New(Definition[[]string, []byte]{
+	Doc:          "Write a list as YAML",
+	Names:        []string{"toyaml"},
+	Type:         TransformAction,
+	InputFormat:  TextListFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in []string) ([]byte, error) {
+		return yaml.Marshal(in)
 	},
 })
 

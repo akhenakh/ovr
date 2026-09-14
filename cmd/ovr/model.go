@@ -139,6 +139,17 @@ func newModel(in []byte) model {
 		}
 	}
 
+	// If the input looks like a JSON object, start with dict data so the
+	// gjson actions are offered right away
+	if action.GuessDict(in) {
+		if a, ok := r.ActionByName(action.TextFormat, "dict"); ok {
+			if d, err := a.Transform(action.NewDataText(in)); err == nil {
+				out = d
+				title = fmt.Sprintf("Dict: %s", strings.TrimRight(out.String(), "\r\n"))
+			}
+		}
+	}
+
 	// Make initial list of actions
 	actions := r.ActionsForData(out)
 	items := make([]list.Item, len(actions))
@@ -152,6 +163,13 @@ func newModel(in []byte) model {
 	actionList.Title = title
 	actionList.Styles.Title = titleStyle
 	actionList.SetShowStatusBar(false)
+	actionList.AdditionalShortHelpKeys = func() []key.Binding {
+		return []key.Binding{
+			key.NewBinding(key.WithKeys("v"), key.WithHelp("v", "details")),
+			key.NewBinding(key.WithKeys("backspace"), key.WithHelp("backspace", "undo")),
+			key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "editor")),
+		}
+	}
 	actionList.AdditionalFullHelpKeys = func() []key.Binding {
 		return []key.Binding{
 			listKeys.toggleTitleBar,
@@ -261,6 +279,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case key.Matches(msg, m.keys.showDetails):
+			m.viewport.SetContent(m.out.String())
+			m.updateViewerSize(m.termWidth, m.termHeight)
 			m.state = detailState
 			return m, nil
 		case key.Matches(msg, m.keys.openEditor):
@@ -488,12 +508,8 @@ func updateParams(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 func updateDetail(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		headerHeight := lipgloss.Height(m.headerView())
-		footerHeight := lipgloss.Height(m.footerView())
-		verticalMarginHeight := headerHeight + footerHeight
-
-		m.viewport.SetWidth(m.width)
-		m.viewport.SetHeight(m.height - verticalMarginHeight)
+		// the detail view renders without the app frame, use the full size
+		m.updateViewerSize(msg.Width, msg.Height)
 
 	case tea.KeyPressMsg:
 		// come back from detail view
@@ -506,6 +522,15 @@ func updateDetail(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 	newViewport, cmd := m.viewport.Update(msg)
 	m.viewport = newViewport
 	return m, cmd
+}
+
+// updateViewerSize sizes the detail viewport to the full given size,
+// the header and footer lines are subtracted from the height
+func (m *model) updateViewerSize(width, height int) {
+	m.viewport.SetWidth(width)
+	headerHeight := lipgloss.Height(m.headerView())
+	footerHeight := lipgloss.Height(m.footerView())
+	m.viewport.SetHeight(max(0, height-headerHeight-footerHeight))
 }
 
 func updateMap(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
@@ -529,7 +554,7 @@ func updateMap(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 
 // headerView for detailView
 func (m model) headerView() string {
-	title := titleStyle.Render("Text:")
+	title := titleStyle.Render(m.out.Format.Name + ":")
 	line := strings.Repeat("─", max(0, m.viewport.Width()-lipgloss.Width(title)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
 }

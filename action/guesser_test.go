@@ -53,3 +53,26 @@ func TestGuessIsBinary(t *testing.T) {
 		})
 	}
 }
+
+func TestGuessDict(t *testing.T) {
+	tests := []struct {
+		name string
+		v    string
+		want bool
+	}{
+		{"object", `{"a":1}`, true},
+		{"object with whitespace", "  {\"a\": 1}\n", true},
+		{"array", "[1,2]", false},
+		{"invalid", "{bad", false},
+		{"scalar", "42", false},
+		{"text", "hello", false},
+		{"empty", "", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GuessDict([]byte(tt.v)); got != tt.want {
+				t.Errorf("GuessDict(%q) = %v, want %v", tt.v, got, tt.want)
+			}
+		})
+	}
+}

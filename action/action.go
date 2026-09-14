@@ -24,7 +24,7 @@ var (
 	TextFormat     = Format{"text", "t"}
 	BinFormat      = Format{"bin", "b"}
 	TimeFormat     = Format{"time", "T"}
-	JSONFormat     = Format{"json", "j"}
+	DictFormat     = Format{"dict", "d"}
 	GeoFormat      = Format{"geometry", "g"}
 	TextListFormat = Format{"textList", "l"}
 	TableFormat    = Format{"table", "r"}
@@ -275,6 +275,15 @@ func inputFunc[I any](f Format) func(*Data) (I, error) {
 				return v, fmt.Errorf("input not a time.Time")
 			}
 			*p = t
+		case *map[string]any:
+			if f != DictFormat || d.Format != DictFormat {
+				return v, fmt.Errorf("input is not a dict")
+			}
+			m, ok := d.Value.(map[string]any)
+			if !ok {
+				return v, fmt.Errorf("input not a dict")
+			}
+			*p = m
 		case *geom.Geometry:
 			if f != GeoFormat || d.Format != GeoFormat {
 				return v, fmt.Errorf("input is not a geometry")
@@ -314,6 +323,11 @@ func outputFunc[O any](f Format) func(O, Action, *Data) (*Data, error) {
 				return nil, fmt.Errorf("%s is not a valid output format for time", f.Name)
 			}
 			return d.StoreTimeValue(*p, a), nil
+		case *map[string]any:
+			if f != DictFormat {
+				return nil, fmt.Errorf("%s is not a valid output format for a dict", f.Name)
+			}
+			return d.StoreDictValue(*p, a), nil
 		case *geom.Geometry:
 			if f != GeoFormat {
 				return nil, fmt.Errorf("%s is not a valid output format for geometry", f.Name)

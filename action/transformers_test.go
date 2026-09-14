@@ -202,6 +202,8 @@ func TestAction_TextListTextTransform(t *testing.T) {
 	}{
 		{action: "comma", in: []string{"a", "b"}, want: "a,b", wantErr: false},
 		{action: "line", in: []string{"a", "b"}, want: "a\nb", wantErr: false},
+		{action: "tojson", in: []string{"a", "b"}, want: `["a","b"]`, wantErr: false},
+		{action: "toyaml", in: []string{"a", "b"}, want: "- a\n- b\n", wantErr: false},
 		{action: "count", in: []string{"a", "bc", "def"}, want: "3", wantErr: false},
 		{action: "first", in: []string{"A", "B", "C"}, want: "A", wantErr: false},
 		{action: "last", in: []string{"A", "B", "C"}, want: "C", wantErr: false},
