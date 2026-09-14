@@ -126,7 +126,6 @@ func newModel(in []byte) model {
 	)
 
 	out := action.NewDataText(in)
-	title := fmt.Sprintf("Text: %s", strings.TrimRight(string(in), "\r\n"))
 
 	// If the input looks like WKT and the wkt action is available,
 	// start with geometry data so geo actions are offered right away
@@ -134,7 +133,6 @@ func newModel(in []byte) model {
 		if a, ok := r.ActionByName(action.TextFormat, "wkt"); ok {
 			if d, err := a.Transform(action.NewDataText(in)); err == nil {
 				out = d
-				title = fmt.Sprintf("Geometry: %s", strings.TrimRight(out.String(), "\r\n"))
 			}
 		}
 	}
@@ -145,10 +143,13 @@ func newModel(in []byte) model {
 		if a, ok := r.ActionByName(action.TextFormat, "dict"); ok {
 			if d, err := a.Transform(action.NewDataText(in)); err == nil {
 				out = d
-				title = fmt.Sprintf("Dict: %s", strings.TrimRight(out.String(), "\r\n"))
 			}
 		}
 	}
+
+	// The title holds a short preview of the entry, big entries must not
+	// be styled by the list on every frame
+	title := fmt.Sprintf("%s: %s", out.Format.Name, out.Preview(titlePreviewRunes))
 
 	// Make initial list of actions
 	actions := r.ActionsForData(out)
@@ -299,7 +300,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.out = d
 			m.list.NewStatusMessage(statusMessageStyle("Removed action: " + oa.Title()))
 
-			m.list.Title = fmt.Sprintf("%s: %s", m.out.Format.Name, strings.TrimRight(m.out.String(), "\r\n"))
+			m.list.Title = fmt.Sprintf("%s: %s", m.out.Format.Name, m.out.Preview(titlePreviewRunes))
 
 			m.list.ResetFilter()
 
@@ -669,10 +670,14 @@ func (m model) startEditor(ea action.Editor) tea.Cmd {
 	})
 }
 
+// titlePreviewRunes is the maximum number of runes the list title holds,
+// titles are re-styled on every frame and must stay short
+const titlePreviewRunes = 120
+
 // setOutput stores the transformation output and refreshes the action list
 func (m *model) setOutput(out *action.Data) {
 	m.out = out
-	m.list.Title = fmt.Sprintf("%s: %s", out.Format.Name, strings.TrimRight(out.String(), "\r\n"))
+	m.list.Title = fmt.Sprintf("%s: %s", out.Format.Name, out.Preview(titlePreviewRunes))
 	m.list.ResetFilter()
 
 	actions := m.r.ActionsForData(m.out)

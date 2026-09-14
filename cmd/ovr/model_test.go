@@ -85,6 +85,18 @@ func TestDetailViewer(t *testing.T) {
 	}
 }
 
+// The list title holds a short preview, big entries must not end up in the
+// title as it is re-styled on every frame.
+func TestTitlePreview(t *testing.T) {
+	m := newModel([]byte(`{"type":"FeatureCollection","features":[` + strings.Repeat(`{"p":1},`, 50000) + `{"p":2}]}`))
+	if len(m.list.Title) > titlePreviewRunes*4+16 { // utf8 worst case + format name
+		t.Fatalf("title length = %d, want it short", len(m.list.Title))
+	}
+	if !strings.HasPrefix(m.list.Title, "dict: {") {
+		t.Fatalf("title = %q, want a dict preview", m.list.Title)
+	}
+}
+
 // The edit action must be offered for the initial data and applying the
 // editor result must store it as the new output.
 func TestEditActionApplied(t *testing.T) {

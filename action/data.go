@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/peterstace/simplefeatures/geom"
 )
@@ -17,6 +19,9 @@ type Data struct {
 	Format         Format
 	StructuredData map[string]any
 	Stack          []Action
+
+	strOnce sync.Once
+	str     string
 }
 
 var ErrEmptyStack = errors.New("empty stack")
@@ -96,7 +101,37 @@ func (d *Data) Undo(in []byte) (*Data, Action, error) {
 	return nd, oa, nil
 }
 
+// String returns the entry as its string representation, the result is
+// computed once and memoized, transforming returns new Data values
 func (d *Data) String() string {
+	d.strOnce.Do(func() {
+		d.str = d.computeString()
+	})
+	return d.str
+}
+
+// Preview returns a single line string representation of the entry,
+// whitespace collapsed and truncated to maxRunes runes,
+// it is meant for titles and status lines, big entries must not
+// end up rendered or styled on every frame
+func (d *Data) Preview(maxRunes int) string {
+	s := d.String()
+	limit := maxRunes * utf8.UTFMax
+	if len(s) > limit {
+		s = s[:limit]
+		for len(s) > 0 && !utf8.RuneStart(s[len(s)-1]) {
+			s = s[:len(s)-1]
+		}
+	}
+	s = strings.Join(strings.Fields(s), " ")
+	r := []rune(s)
+	if len(r) > maxRunes {
+		return string(r[:maxRunes]) + "…"
+	}
+	return s
+}
+
+func (d *Data) computeString() string {
 	switch d.Format {
 	case TextFormat, BinFormat:
 		return string(d.RawValue)
