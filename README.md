@@ -67,21 +67,28 @@ ovrui compiles to GOOS=js/GOARCH=wasm and runs in the browser on shirei's
 jsbackend (software renderer over a canvas, no plugins):
 
 ```sh
-task web          # build a static site into dist/ (index.html, main.wasm, wasm_exec.js, .headers, embed.js)
+task web          # build the site into docs/ (main.wasm, wasm_exec.js, .headers, embed.js) + landing page
 task web-run      # build into a temp dir, serve http://127.0.0.1:8787/ and open a browser
 ```
 
 or without task:
 
 ```sh
-go run go.hasen.dev/shirei/cmd/shirei_web -o dist ./cmd/ovrui
+go run go.hasen.dev/shirei/cmd/shirei_web -o docs ./cmd/ovrui
 go run go.hasen.dev/shirei/cmd/shirei_web -run ./cmd/ovrui
 ```
 
-Copy `dist/` to any static host that honors the emitted `.headers`
-(COOP+COEP). `task web WEB_TAGS=geo` enables the geo actions in the wasm
-build. The browser clipboard is only reachable through the paste popup and
-the Copy Output button.
+`docs/` is committed and published by **GitHub Pages** (source `main` /docs),
+so `task web` + commit updates the live site at
+<https://akhenakh.github.io/ovr/>. `task web WEB_TAGS=geo` enables the geo
+actions in the wasm build.
+
+Copy `docs/` to any other static host that honors the emitted `.headers`
+(COOP+COEP). GitHub Pages does not serve custom headers, so the page is not
+cross-origin isolated; that only changes the Web Audio path (ScriptProcessor
+instead of SharedArrayBuffer, unused by ovrui) and everything else works. The
+browser clipboard is only reachable through the paste popup and the Copy
+Output button.
 
 ## Development
 

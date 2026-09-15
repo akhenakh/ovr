@@ -5,8 +5,8 @@ vars:
   LDFLAGS: -s -w
   # everything builds CGO-free (shirei purego backends, golang.design/x/clipboard v0.9)
   TAGS: ""
-  # web/wasm output directory
-  WEB_OUT: dist
+  # web/wasm output directory; committed and served by GitHub Pages (main /docs)
+  WEB_OUT: docs
   # extra tags for the wasm build, forwarded via GOFLAGS (shirei_web has no
   # -tags flag), eg. `task web WEB_TAGS=geo`
   WEB_TAGS: ""
@@ -89,14 +89,17 @@ tasks:
       - go run ./cmd/ovrui {{.CLI_ARGS}}
 
   web:
-    desc: Build the ovrui static web site (index.html, main.wasm, wasm_exec.js) into {{.WEB_OUT}}/
+    desc: Build the ovrui static web site (main.wasm, wasm_exec.js) into {{.WEB_OUT}}/ with the landing page
     cmds:
       - "{{if .WEB_TAGS}}GOFLAGS=-tags={{.WEB_TAGS}} {{end}}go run go.hasen.dev/shirei/cmd/shirei_web -o {{.WEB_OUT}} ./cmd/ovrui"
+      - cp web/index.html {{.WEB_OUT}}/index.html
+      - touch {{.WEB_OUT}}/.nojekyll
     sources:
       - cmd/ovrui/*.go
       - cmd/ovrui/*.ttf
       - action/*.go
       - internal/**/*.go
+      - web/index.html
       - go.mod
       - go.sum
     generates:

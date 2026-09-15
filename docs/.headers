@@ -1,0 +1,3 @@
+# shirei_web — cross-origin isolation for SharedArrayBuffer audio
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
