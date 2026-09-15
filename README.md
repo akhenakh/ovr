@@ -2,6 +2,8 @@
 
 A CLI tool to pipe anything into and apply transformations with an advanced UI.
 
+Try it in the browser (wasm build): <https://akhenakh.github.io/ovr/>
+
 ## Install
 
 With [Homebrew](https://brew.sh) (Linux and macOS, formulas from [akhenakh/homebrew-tap](https://github.com/akhenakh/homebrew-tap)):

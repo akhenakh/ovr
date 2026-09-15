@@ -456,6 +456,8 @@ func Toolbar() {
 		if appData.refocusFilter {
 			appData.refocusFilter = false
 			FocusImmediateOn(appData.filterId)
+			// focus moved programmatically: show the keyboard focus indicator
+			ShowFocusIndicator()
 		}
 		if Button(SymRefresh, "Reload") {
 			reloadClipboard()

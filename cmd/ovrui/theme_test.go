@@ -55,8 +55,11 @@ func TestThemeSwitchAction(t *testing.T) {
 	if theme != themes[0] {
 		t.Fatalf("active theme is %q, want default", theme.name)
 	}
-	if widgets.ButtonAccent != themes[0].buttonAccent {
-		t.Fatal("stock widget accent was not updated")
+	if got := widgets.CurrentColorScheme.Buttons.Default.Normal.Background; got != themes[0].buttonAccent {
+		t.Fatalf("stock button accent is %v, want %v", got, themes[0].buttonAccent)
+	}
+	if got := widgets.CurrentColorScheme.Surfaces.Panel.Background; got != themes[0].floatBg {
+		t.Fatalf("stock floating surface is %v, want %v", got, themes[0].floatBg)
 	}
 
 	// the choice is persisted
@@ -75,6 +78,10 @@ func TestThemeSwitchAction(t *testing.T) {
 	}
 	if theme.name != "solarized-dark" {
 		t.Fatalf("active theme is %q, want solarized-dark", theme.name)
+	}
+	// dark themes build the stock chrome from the dark preset
+	if got := widgets.CurrentColorScheme.Surfaces.Canvas.Background; got[2] >= 50 {
+		t.Fatalf("solarized-dark stock canvas is %v, want a dark surface", got)
 	}
 
 	// and to solarized light

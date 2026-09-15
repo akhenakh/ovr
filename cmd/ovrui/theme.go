@@ -56,9 +56,15 @@ type uiTheme struct {
 	statusHint Vec4
 	statusInfo Vec4
 
+	// dark selects the base preset for the stock-widget color scheme (see
+	// applyChrome); ovrui's own views always paint from the fields below
+	dark bool
+
 	paramsLabel Vec4
 	paramsDoc   Vec4
 
+	// stock-widget overrides: button face and floating-surface background,
+	// merged into CurrentColorScheme by applyChrome
 	buttonAccent Vec4
 	floatBg      Vec4
 }
@@ -120,6 +126,7 @@ var themes = []*uiTheme{
 	}),
 	mkTheme("solarized-dark", "Solarized dark theme", "solarized dark theme", uiTheme{
 		// solarized dark palette
+		dark:        true,
 		rootBg:      Vec4{192, 100, 11, 1}, // base03
 		headerBg:    Vec4{192, 81, 14, 1},  // base02
 		headerTitle: Vec4{68, 100, 30, 1},  // green
@@ -217,11 +224,26 @@ var themes = []*uiTheme{
 // theme is the active theme
 var theme = themes[0]
 
+// applyChrome rethemes the stock widgets (buttons, floating panels) for the
+// theme. Stock controls read CurrentColorScheme on every build, so the theme
+// merges its overrides into the matching built-in scheme: dark themes start
+// from the dark preset so the derived chrome (scrollbars, menus, focus ring,
+// modal scrim) stays readable. Built fresh from a preset each time, so
+// switching themes repeatedly never accumulates tint.
+func applyChrome(t *uiTheme) {
+	scheme := LightColorScheme()
+	if t.dark {
+		scheme = DarkColorScheme()
+	}
+	scheme.Buttons.Default = ButtonStyleWithAccent(scheme.Buttons.Default, t.buttonAccent)
+	scheme.Surfaces.Panel.Background = t.floatBg
+	CurrentColorScheme = scheme
+}
+
 func init() {
 	// apply the stock-widget chrome for the default theme; loadConfig may
 	// override it later
-	ButtonAccent = theme.buttonAccent
-	DefaultBackground = theme.floatBg
+	applyChrome(theme)
 }
 
 // registerThemeActions adds one action per theme so switching is available
@@ -253,8 +275,7 @@ func themeByName(name string) *uiTheme {
 func setTheme(t *uiTheme) {
 	theme = t
 	// retheme stock widgets (buttons, floating panels)
-	ButtonAccent = t.buttonAccent
-	DefaultBackground = t.floatBg
+	applyChrome(t)
 	saveConfig()
 }
 
@@ -293,8 +314,7 @@ func loadConfig() {
 	}
 	if t := themeByName(cfg.Theme); t != nil {
 		theme = t
-		ButtonAccent = t.buttonAccent
-		DefaultBackground = t.floatBg
+		applyChrome(t)
 	}
 }
 
