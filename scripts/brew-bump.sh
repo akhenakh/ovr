@@ -98,6 +98,10 @@ class ${CLASS} < Formula
       resource("ovrui").stage { bin.install "ovrui" }
     end
   end
+
+  test do
+    assert_match "flag provided but not defined", shell_output("#{bin}/ovr -bogus 2>&1", 2)
+  end
 end
 EOF
 
