@@ -4,6 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/akhenakh/ovr/action"
+
 	. "go.hasen.dev/shirei"
 )
 
@@ -221,5 +223,67 @@ func TestArrowsNavigateList(t *testing.T) {
 	uiFrame(Vec2{-1000, -1000}, 0, KeyUp)
 	if appData.selected != list[len(list)-1] {
 		t.Fatal("Up did not wrap to the last action")
+	}
+}
+
+func TestBackspaceUndoesLastAction(t *testing.T) {
+	setInput([]byte("hello"))
+
+	uiFrame(Vec2{-1000, -1000}, 0, 0)
+	uiFrame(Vec2{-1000, -1000}, 0, 0)
+	if !appData.listFocus {
+		t.Fatal("startup focus is not on the actions list")
+	}
+
+	upper := findAction(t, action.TextFormat, "upper")
+	if !applyAction(upper) {
+		t.Fatalf("apply failed: %s", appData.status)
+	}
+	if got := appData.out.String(); got != "HELLO" {
+		t.Fatalf("output is %q, want HELLO", got)
+	}
+
+	uiFrame(Vec2{-1000, -1000}, 0, KeyDeleteBackward)
+	if got := appData.out.String(); got != "hello" {
+		t.Fatalf("output is %q, want hello after backspace undo", got)
+	}
+	if len(appData.out.Stack) != 0 {
+		t.Fatalf("stack has %d entries, want none", len(appData.out.Stack))
+	}
+
+	// backspace on an empty stack is a no-op, not an error
+	uiFrame(Vec2{-1000, -1000}, 0, KeyDeleteBackward)
+	if appData.isErr {
+		t.Fatalf("backspace on an empty stack set an error: %s", appData.status)
+	}
+}
+
+func TestBackspaceInFilterDoesNotUndo(t *testing.T) {
+	setInput([]byte("hello"))
+
+	uiFrame(Vec2{-1000, -1000}, 0, 0)
+	uiFrame(Vec2{-1000, -1000}, 0, 0)
+
+	upper := findAction(t, action.TextFormat, "upper")
+	if !applyAction(upper) {
+		t.Fatalf("apply failed: %s", appData.status)
+	}
+
+	// Tab moves to the filter field: backspace edits the text there
+	uiFrame(Vec2{-1000, -1000}, 0, KeyTab)
+	if appData.listFocus {
+		t.Fatal("Tab did not move focus to the filter field")
+	}
+	appData.search = "up"
+
+	uiFrame(Vec2{-1000, -1000}, 0, KeyDeleteBackward)
+	if len(appData.out.Stack) != 1 {
+		t.Fatalf("stack has %d entries, backspace in the filter undid an action", len(appData.out.Stack))
+	}
+	if got := appData.out.String(); got != "HELLO" {
+		t.Fatalf("output is %q, want HELLO", got)
+	}
+	if appData.search != "up" {
+		t.Fatalf("filter is %q, backspace with the filter focused must only edit the text", appData.search)
 	}
 }

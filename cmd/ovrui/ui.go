@@ -394,6 +394,14 @@ func commitEdit() {
 	applyTransform(a)
 }
 
+// undoLast removes the last applied action when there is one.
+func undoLast() {
+	if len(appData.out.Stack) == 0 {
+		return
+	}
+	undoAction()
+}
+
 func undoAction() {
 	nd, oa, err := appData.out.Undo(appData.in)
 	if err != nil {
@@ -557,6 +565,12 @@ func RootView() {
 		case KeyDown, KeyUp:
 			if appData.listFocus {
 				moveSelection(GetFrameInput().Key == KeyDown)
+			}
+		case KeyDeleteBackward:
+			// Backspace on the list removes the last applied action, like
+			// the Undo button; in the filter it keeps editing the text
+			if appData.listFocus {
+				undoLast()
 			}
 		case keySlash:
 			// "/" jumps from the list to the filter, like a search prompt
@@ -845,7 +859,7 @@ func StatusBar() {
 				Label(appData.status, FontSize(12), TextColorVec(theme.statusOK))
 			}
 		} else {
-			Label("↑↓ navigate · Enter selects/applies · / or Tab filters · Esc clears the filter · "+quitHint(), FontSize(11), TextColorVec(theme.statusHint))
+			Label("↑↓ navigate · Enter selects/applies · / or Tab filters · Backspace undoes · Esc clears the filter · "+quitHint(), FontSize(11), TextColorVec(theme.statusHint))
 		}
 	})
 }

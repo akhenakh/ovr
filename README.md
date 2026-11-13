@@ -80,7 +80,8 @@ glance.
 
 The actions list owns the keyboard: arrow keys navigate and Enter picks or
 applies an action. Press `/` (or Tab) to jump to the filter field, Tab to
-toggle between the two, and Escape to clear the filter and return to the list.
+toggle between the two, Escape to clear the filter and return to the list, and
+Backspace to remove the last applied action.
 
 ## Web (wasm)
 
