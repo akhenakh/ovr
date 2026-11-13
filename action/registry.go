@@ -27,8 +27,15 @@ var all = []Action{
 	commaTextListAction, linesTextListAction, textListJoinNewLineAction, jwtTextListAction, textListJoinCommaAction, textListCharJoinAction, jsonCompactAction, jsonPrettifyAction,
 	textListSortAction, textListReverseAction, textListUniqueAction, textListShuffleAction, textListFilterAction, textListToJSONAction, textListToYAMLAction,
 	textListFirstAction, textListLastAction, textListIndexAction, textListCountAction, textCountAction, textCountLinesAction, humanizeDurationTextAction, humanBytesAction, unescapeTextAction, stripWhitespaceAction,
-	dictAction, dictGetAction, dictToJSONAction, dictKeysAction,
+	dictAction, dictGetAction, dictToJSONAction, dictToYAMLAction, dictKeysAction,
 	parseCSVAction, tableSortColumnAction, tableToCSVAction,
+
+	urlEncodeAction, urlDecodeAction, htmlEscapeAction, htmlUnescapeAction,
+	toBinaryAction, fromBinaryAction, slugAction, replaceTextAction, textStatsAction,
+	intBaseAction, convertAction,
+	ipv4Action, subnetAction, ipv6Action,
+	xmlPrettyAction, markdownAction,
+	uuid5Action, bcryptAction, bcryptCheckAction, encryptAction, decryptAction,
 }
 
 func init() {
@@ -36,7 +43,7 @@ func init() {
 }
 
 // generatorActions ignore their input and can be applied to any data
-var generatorActions = []Action{uuidV4Action, uuidV7Action, nowTimeAction, repeatLastAction, newCalcAction, passwordAction}
+var generatorActions = []Action{uuidV4Action, uuidV7Action, nowTimeAction, repeatLastAction, newCalcAction, passwordAction, tokenAction, newULAAction, rsaAction}
 
 // inputFormats is every format generator actions are registered for,
 // text list data already offers text to text actions so it is not needed there

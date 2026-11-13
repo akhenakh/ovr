@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 
-	. "go.hasen.dev/shirei"
+	. "go.hasen.dev/shirei" //nolint:staticcheck // shirei's DSL is dot-imported by design
 	app "go.hasen.dev/shirei/app"
 
 	"golang.design/x/clipboard"

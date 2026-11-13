@@ -170,6 +170,13 @@ Tasks are defined in `Taskfile.yml` ([go-task](https://taskfile.dev)):
 - [X] CamelCase, snake_case, kebab-case, PascalCase (`camel`, `snake`, `kebab`, `pascal`)
 - [X] humanize: time to relative text like '3 days ago' (`humanize`, `ago`), durations like `2h30m`, `2d` to '2 hours 30 minutes' (`humanize`), byte counts like 1048576 to '1.0 MB' (`humanbytes`)
 - [X] encoding from/to (b64, hex ...)
+- [X] integer base conversion between 2 and 36 (`intbase`)
+- [X] URL encode/decode (`urlencode`, `urldecode`), HTML entity escape/unescape (`htmlescape`, `htmlunescape`)
+- [X] text to and from 8-bit binary (`tobinary`, `frombinary`)
+- [X] slugify (`slug`), regexp replace with groups (`replace`), unit conversion length/mass/data/time/temperature (`convert`)
+- [X] text statistics: words, sentences, paragraphs, entropy, reading time (`stats`)
+- [X] XML pretty print (`xmlpretty`), Markdown to HTML (`markdown`)
+- [X] YAML output for dicts (`toyaml`)
 - [X] hashes (md5, sha1, sha256, sha512, crc32, hmac)
 - [X] count inputs
 - [X] split text into a list with any separator (`split`), by comma, space, pipe, new lines (`lines`)
@@ -207,6 +214,20 @@ Tasks are defined in `Taskfile.yml` ([go-task](https://taskfile.dev)):
 - [ ] URL
 - [ ] Source Code, format, colorize
 - [ ] Save to file
+
+## Network
+
+- [X] IPv4 conversions between dotted, decimal, hex and binary (`ipv4`)
+- [X] subnet calculator: network, netmask, wildcard, broadcast, host range (`subnet`)
+- [X] IPv6 address and prefix details, including the reverse DNS name (`ipv6`)
+- [X] new random IPv6 unique local prefix (`newula`)
+
+## Crypto
+
+- [X] UUID v5, deterministic from a namespace and a name (`uuid5`)
+- [X] random tokens, hex/base64/base64url (`token`), random RSA key pairs (`newrsa`)
+- [X] bcrypt hash and verify (`bcrypt`, `bcryptcheck`)
+- [X] AES-256-GCM encrypt/decrypt with a passphrase, scrypt-derived key (`encrypt`, `decrypt`)
 
 ## Filter 
 - [X] dedup from a list (`unique`)

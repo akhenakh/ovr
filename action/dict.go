@@ -75,6 +75,17 @@ var dictToJSONAction = New(Definition[map[string]any, []byte]{
 	},
 })
 
+var dictToYAMLAction = New(Definition[map[string]any, []byte]{
+	Doc:          "Write a dict as YAML",
+	Names:        []string{"toyaml"},
+	Type:         TransformAction,
+	InputFormat:  DictFormat,
+	OutputFormat: TextFormat,
+	Func: func(a Action, in map[string]any) ([]byte, error) {
+		return yaml.Marshal(in)
+	},
+})
+
 var dictKeysAction = New(Definition[map[string]any, []string]{
 	Doc:          "Get the keys of a dict as a sorted list",
 	Names:        []string{"keys"},

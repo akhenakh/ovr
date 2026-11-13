@@ -55,7 +55,11 @@ type Definition[I, O any] struct {
 	OutputFormat Format
 	Parameters   []ActionParameter
 	Interactive  bool
-	Func         Func[I, O]
+	// NonDeterministic marks actions whose output cannot be reproduced by
+	// running Func again (random, crypto, "now"). The produced value is
+	// recorded on the stack entry so undo replays the same result.
+	NonDeterministic bool
+	Func             Func[I, O]
 }
 
 // Action is a type erased transformation usable in registries and data stacks.
@@ -96,6 +100,9 @@ type erased[I, O any] struct {
 	in     func(*Data) (I, error)
 	out    func(O, Action, *Data) (*Data, error)
 	params []any
+	// recorded holds the value a non-deterministic action produced, so the
+	// stack entry replays that value instead of computing a new one
+	recorded *O
 }
 
 func (e *erased[I, O]) Doc() string                   { return e.def.Doc }
@@ -110,6 +117,15 @@ func (e *erased[I, O]) Interactive() bool             { return e.def.Interactive
 func (e *erased[I, O]) clone() Action {
 	c := *e
 	c.params = nil
+	c.recorded = nil
+	return &c
+}
+
+// fresh returns the action without a recorded value, so callers that re-run it
+// on purpose (repeat) get a new result.
+func (e *erased[I, O]) fresh() Action {
+	c := *e
+	c.recorded = nil
 	return &c
 }
 
@@ -144,6 +160,12 @@ func (e *erased[I, O]) Transform(in *Data) (*Data, error) {
 		return nil, fmt.Errorf("input parameters required for %s", e.Title())
 	}
 
+	// replay the value recorded when the action was first applied: undo must
+	// not re-randomize a non-deterministic action
+	if e.recorded != nil {
+		return e.out(*e.recorded, e, in)
+	}
+
 	// the input format of the action needs to be applied to all
 	// list members if the data is a text list
 	if in.Format == TextListFormat && e.def.InputFormat == TextFormat && e.def.OutputFormat == TextFormat && isTextPair[I, O]() {
@@ -175,6 +197,12 @@ func (e *erased[I, O]) Transform(in *Data) (*Data, error) {
 	out, err := e.def.Func(e, d)
 	if err != nil {
 		return nil, err
+	}
+
+	if e.def.NonDeterministic {
+		c := *e
+		c.recorded = &out
+		return c.out(out, &c, in)
 	}
 
 	return e.out(out, e, in)

@@ -9,8 +9,8 @@ import (
 
 	"github.com/akhenakh/ovr/action"
 
-	. "go.hasen.dev/shirei"
-	. "go.hasen.dev/shirei/widgets"
+	. "go.hasen.dev/shirei" //nolint:staticcheck // shirei's DSL is dot-imported by design
+	. "go.hasen.dev/shirei/widgets" //nolint:staticcheck // shirei's DSL is dot-imported by design
 )
 
 type f32 = float32

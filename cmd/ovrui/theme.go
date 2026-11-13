@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	. "go.hasen.dev/shirei"
-	. "go.hasen.dev/shirei/widgets"
+	. "go.hasen.dev/shirei" //nolint:staticcheck // shirei's DSL is dot-imported by design
+	. "go.hasen.dev/shirei/widgets" //nolint:staticcheck // shirei's DSL is dot-imported by design
 
 	"github.com/akhenakh/ovr/action"
 	"gopkg.in/yaml.v3"

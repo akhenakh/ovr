@@ -18,15 +18,25 @@ func (a *newAction[O]) Transform(in *Data) (*Data, error) {
 	if len(a.params) != len(a.def.Parameters) {
 		return nil, fmt.Errorf("input parameters required for %s", a.Title())
 	}
+	// generators always invent their value, replay the recorded one on undo
+	if a.recorded != nil {
+		return a.out(*a.recorded, a, in)
+	}
 	out, err := a.def.Func(a, nil)
 	if err != nil {
 		return nil, err
 	}
-	return a.out(out, a, in)
+	c := *a.erased
+	c.recorded = &out
+	return c.out(out, &newAction[O]{erased: &c}, in)
 }
 
 func (a *newAction[O]) clone() Action {
 	return &newAction[O]{erased: a.erased.clone().(*erased[[]byte, O])}
+}
+
+func (a *newAction[O]) fresh() Action {
+	return &newAction[O]{erased: a.erased.fresh().(*erased[[]byte, O])}
 }
 
 func (a *newAction[O]) rebind(f Format) Action {
@@ -193,11 +203,17 @@ var newCalcAction = newGenerator(Definition[[]byte, []byte]{
 // every result is collected in a text list.
 type repeatAction struct {
 	*erased[[]byte, []byte]
+	// recordedList keeps the results so undo replays them instead of
+	// repeating a non-deterministic action again
+	recordedList []string
 }
 
 func (a *repeatAction) Transform(in *Data) (*Data, error) {
 	if len(a.params) != len(a.def.Parameters) {
 		return nil, fmt.Errorf("input parameters required for %s", a.Title())
+	}
+	if a.recordedList != nil {
+		return in.StoreTextListValue(a.recordedList, a), nil
 	}
 	n, ok := a.params[0].(int)
 	if !ok {
@@ -213,6 +229,11 @@ func (a *repeatAction) Transform(in *Data) (*Data, error) {
 	if _, ok := last.(*repeatAction); ok {
 		return nil, fmt.Errorf("can't repeat %s", last.Title())
 	}
+	// run the action without its recorded value: every repetition must
+	// produce a fresh result, the list is recorded above for replay
+	if f, ok := last.(interface{ fresh() Action }); ok {
+		last = f.fresh()
+	}
 
 	l := make([]string, 0, n)
 	cur := in
@@ -224,11 +245,20 @@ func (a *repeatAction) Transform(in *Data) (*Data, error) {
 		l = append(l, nd.String())
 		cur = nd
 	}
-	return in.StoreTextListValue(l, a), nil
+
+	c := *a
+	c.recordedList = l
+	return in.StoreTextListValue(l, &c), nil
 }
 
 func (a *repeatAction) clone() Action {
 	return &repeatAction{erased: a.erased.clone().(*erased[[]byte, []byte])}
+}
+
+func (a *repeatAction) fresh() Action {
+	c := *a
+	c.recordedList = nil
+	return &c
 }
 
 func (a *repeatAction) rebind(f Format) Action {

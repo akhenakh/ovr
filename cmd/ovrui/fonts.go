@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	. "go.hasen.dev/shirei"
+	. "go.hasen.dev/shirei" //nolint:staticcheck // shirei's DSL is dot-imported by design
 )
 
 //go:embed iosevskanerdfont.ttf

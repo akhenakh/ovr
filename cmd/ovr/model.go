@@ -649,11 +649,11 @@ func (m model) startEditor(ea action.Editor) tea.Cmd {
 	}
 
 	if _, err := f.Write([]byte(ea.EditContent(m.out))); err != nil {
-		f.Close()
-		os.Remove(f.Name())
+		_ = f.Close()
+		_ = os.Remove(f.Name())
 		return m.list.NewStatusMessage(errorMessageStyle("Error " + err.Error()))
 	}
-	f.Close()
+	_ = f.Close()
 
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
@@ -661,7 +661,7 @@ func (m model) startEditor(ea action.Editor) tea.Cmd {
 	}
 	c := exec.Command(editor, f.Name()) //nolint:gosec
 	return tea.ExecProcess(c, func(err error) tea.Msg {
-		defer os.Remove(f.Name())
+		defer func() { _ = os.Remove(f.Name()) }()
 		if err != nil {
 			return editorFinishedMsg{err: err}
 		}

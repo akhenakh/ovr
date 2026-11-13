@@ -119,6 +119,23 @@ func (r *ActionRegistry) TextListTextAction(name string, in []string) ([]byte, e
 	return out.RawValue, nil
 }
 
+func (r *ActionRegistry) DictAction(name string, in []byte) (map[string]any, error) {
+	a, ok := r.ActionByName(TextFormat, name)
+	if !ok {
+		return nil, fmt.Errorf("action %s does not exist for text input", name)
+	}
+
+	out, err := a.Transform(NewDataText(in))
+	if err != nil {
+		return nil, err
+	}
+	m, ok := out.Value.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("output is not a dict")
+	}
+	return m, nil
+}
+
 func TestAction_FilterValue(t *testing.T) {
 	r := NewRegistry()
 

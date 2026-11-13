@@ -15,7 +15,6 @@ import (
 	"errors"
 	"fmt"
 	"hash/crc32"
-	"io"
 	"math/rand"
 	"os/exec"
 	"regexp"
@@ -237,7 +236,7 @@ var md5HashAction = New(Definition[[]byte, []byte]{
 	OutputFormat: TextFormat,
 	Func: func(a Action, in []byte) ([]byte, error) {
 		h := md5.New()
-		io.WriteString(h, string(in))
+		_, _ = h.Write(in)
 		return []byte(hex.EncodeToString(h.Sum(nil))), nil
 	},
 })
@@ -250,7 +249,7 @@ var sha1HashAction = New(Definition[[]byte, []byte]{
 	OutputFormat: TextFormat,
 	Func: func(a Action, in []byte) ([]byte, error) {
 		h := sha1.New()
-		io.WriteString(h, string(in))
+		_, _ = h.Write(in)
 		return []byte(hex.EncodeToString(h.Sum(nil))), nil
 	},
 })
@@ -263,7 +262,7 @@ var sha256HashAction = New(Definition[[]byte, []byte]{
 	OutputFormat: TextFormat,
 	Func: func(a Action, in []byte) ([]byte, error) {
 		h := sha256.New()
-		io.WriteString(h, string(in))
+		_, _ = h.Write(in)
 		return []byte(hex.EncodeToString(h.Sum(nil))), nil
 	},
 })
@@ -276,7 +275,7 @@ var sha512HashAction = New(Definition[[]byte, []byte]{
 	OutputFormat: TextFormat,
 	Func: func(a Action, in []byte) ([]byte, error) {
 		h := sha512.New()
-		io.WriteString(h, string(in))
+		_, _ = h.Write(in)
 		return []byte(hex.EncodeToString(h.Sum(nil))), nil
 	},
 })
@@ -797,11 +796,12 @@ var textListUniqueAction = New(Definition[[]string, []string]{
 })
 
 var textListShuffleAction = New(Definition[[]string, []string]{
-	Doc:          "Shuffle a list randomly",
-	Names:        []string{"shuffle"},
-	Type:         TransformAction,
-	InputFormat:  TextListFormat,
-	OutputFormat: TextListFormat,
+	Doc:              "Shuffle a list randomly",
+	Names:            []string{"shuffle"},
+	Type:             TransformAction,
+	InputFormat:      TextListFormat,
+	OutputFormat:     TextListFormat,
+	NonDeterministic: true,
 	Func: func(a Action, in []string) ([]string, error) {
 		out := make([]string, len(in))
 		copy(out, in)
