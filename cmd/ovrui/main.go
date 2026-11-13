@@ -15,7 +15,8 @@ import (
 )
 
 func main() {
-	// shirei's LargeText logs every scan to the std logger; keep stdout clean
+	// shirei logs text indexing and resource diagnostics to the std logger;
+	// a GUI binary must keep stdout clean
 	log.SetOutput(io.Discard)
 
 	loadConfig()

@@ -39,6 +39,14 @@ type AppState struct {
 	// or the clipboard, and reopenable from the toolbar
 	pasteOpen bool
 	pasteBuf  string
+	// read-only documents backing the right pane (output and input tabs);
+	// documents are app-owned retained state, never rebuilt per frame
+	outDoc TextDocument
+	inDoc  TextDocument
+	// edit action session: the in-app document editor stands in for $EDITOR
+	editOpen   bool
+	editAction action.Action
+	editDoc    TextDocument
 }
 
 var appData = &AppState{}
@@ -106,6 +114,19 @@ func themedTextInput(buf *string, attrs TextInputAttrs) {
 	})
 }
 
+// editorStyle paints a document editor from the theme while keeping the
+// stock selection chrome.
+func editorStyle(bg, text, caret Vec4) TextInputStyle {
+	s := CurrentColorScheme.TextInput
+	s.Background = bg
+	s.Text = text
+	s.Caret = caret
+	s.Selection = theme.selRowBg
+	s.Border = theme.fieldBorder
+	s.HoveredBorder = theme.fieldFocus
+	return s
+}
+
 func setInput(in []byte) {
 	if appData.registry == nil {
 		appData.registry = action.DefaultRegistry()
@@ -142,7 +163,21 @@ func setInput(in []byte) {
 	appData.status = ""
 	appData.isErr = false
 	appData.listFocus = false
+	appData.editOpen = false
+	appData.editAction = nil
+	syncDocs()
 	refreshActions()
+}
+
+// syncDocs refreshes both read-only pane documents from the current data.
+func syncDocs() {
+	appData.outDoc.SetText(appData.out.String())
+	appData.inDoc.SetText(string(appData.in))
+}
+
+// syncOutputDoc refreshes the output document after a transformation.
+func syncOutputDoc() {
+	appData.outDoc.SetText(appData.out.String())
 }
 
 func refreshActions() {
@@ -246,6 +281,12 @@ func applySelected() bool {
 }
 
 func applyAction(a action.Action) bool {
+	// editor actions need the in-app document editor instead of a parameter
+	// field; the action is applied once the user saves the edited content
+	if ed, ok := a.(action.Editor); ok {
+		startEditAction(a, ed)
+		return false
+	}
 	if params := a.Parameters(); len(params) > 0 {
 		if len(appData.paramBuf) != len(params) {
 			setStatus(fmt.Sprintf("%s: missing parameters", a.Title()), true)
@@ -283,6 +324,11 @@ func applyAction(a action.Action) bool {
 		}
 	}
 
+	return applyTransform(a)
+}
+
+// applyTransform runs the action on the current data and updates the app state.
+func applyTransform(a action.Action) bool {
 	out, err := a.Transform(appData.out)
 	if err != nil {
 		setStatus(err.Error(), true)
@@ -293,8 +339,48 @@ func applyAction(a action.Action) bool {
 	appData.selected = nil
 	appData.paramBuf = nil
 	refreshActions()
+	syncOutputDoc()
 	setStatus("applied "+a.Title(), false)
 	return true
+}
+
+// startEditAction opens the in-app document editor for an edit action,
+// replacing the external $EDITOR the TUI launches.
+func startEditAction(a action.Action, ed action.Editor) {
+	appData.editAction = a
+	appData.editDoc.SetText(ed.EditContent(appData.out))
+	appData.editOpen = true
+	appData.listFocus = false
+	setStatus("editing output, save to apply "+a.Title(), false)
+}
+
+// cancelEdit closes the editor and drops the edits.
+func cancelEdit() {
+	appData.editOpen = false
+	appData.editAction = nil
+	// return the keyboard to the filter field once the modal is gone
+	exitListFocus()
+	setStatus("edit cancelled", false)
+}
+
+// commitEdit feeds the edited content back to the action as its input
+// parameter, then applies it so the action stays undoable by replay.
+func commitEdit() {
+	a := appData.editAction
+	if a == nil {
+		cancelEdit()
+		return
+	}
+	content := appData.editDoc.Text()
+	appData.editOpen = false
+	appData.editAction = nil
+	// return the keyboard to the filter field once the modal is gone
+	exitListFocus()
+	if err := a.SetInputParameters(content); err != nil {
+		setStatus(err.Error(), true)
+		return
+	}
+	applyTransform(a)
 }
 
 func undoAction() {
@@ -305,6 +391,7 @@ func undoAction() {
 	}
 	appData.out = nd
 	refreshActions()
+	syncOutputDoc()
 	setStatus("removed "+oa.Title(), false)
 }
 
@@ -342,10 +429,19 @@ func loadPaste() {
 	setStatus(fmt.Sprintf("input loaded (%d bytes)", len(in)), false)
 }
 
+// themedModal renders a modal card painted from the active theme instead of
+// shirei's default light card.
+func themedModal(width f32, dismiss func(), fn func()) {
+	st := DefaultModalStyle()
+	st.Background = theme.paneBg
+	st.Text = theme.outputText
+	ModalStyled(width, dismiss, st, fn)
+}
+
 // pasteModal renders the paste-input dialog over the app.
 func pasteModal() {
-	Modal(640, closePaste, func() {
-		Label("Paste input", FontSize(16), FontWeight(WeightBold), TextColorVec(theme.headerTitle))
+	themedModal(640, closePaste, func() {
+		Label("Paste input", FontSize(16), FontWeight(WeightBold), TextColorVec(theme.paneTitle))
 		themedTextInput(&appData.pasteBuf, TextInputAttrs{
 			Placeholder: "paste text here…",
 			Rows:        12,
@@ -361,6 +457,39 @@ func pasteModal() {
 			}
 		})
 	})
+}
+
+// editModal renders the document editor standing in for $EDITOR over the app.
+func editModal() {
+	themedModal(920, cancelEdit, func() {
+		Container(Attrs(Row, Expand, CrossMid, Gap(10)), func() {
+			Label("Edit output", FontSize(16), FontWeight(WeightBold), TextColorVec(theme.paneTitle))
+			Filler(1)
+			Label(saveHint(), FontSize(11), TextColorVec(theme.rowDoc))
+		})
+		Container(Attrs(Expand, FixHeight(470), Clip, Corners(4), BorderWidth(1), BorderColorVec(theme.fieldBorder)), func() {
+			TextEditorStyled(&appData.editDoc, TextEditorAttrs{
+				TextStyle:   TextStyle(Fonts(Monospace...), FontSize(13)),
+				LineNumbers: true,
+			}, editorStyle(theme.fieldBg, theme.fieldText, theme.fieldCaret), CurrentColorScheme.ScrollBar)
+		})
+		Container(Attrs(Row, Expand, CrossMid, Gap(8)), func() {
+			Filler(1)
+			if Button(SymCancel, "Cancel") {
+				cancelEdit()
+			}
+			if Button(SymBoxTick, "Save & Apply") {
+				commitEdit()
+			}
+		})
+	})
+}
+
+func saveHint() string {
+	if PrimaryMod() == ModCmd {
+		return "Escape cancels · Cmd+S saves"
+	}
+	return "Escape cancels · Ctrl+S saves"
 }
 
 func quitHint() string {
@@ -386,9 +515,13 @@ func dataSummary() string {
 }
 
 func RootView() {
-	// while the paste popup is open it owns the keyboard (the Modal dismiss
-	// gestures and the text field handle the keys themselves)
-	if !appData.pasteOpen {
+	// popups own the keyboard while open: the paste field and the document
+	// editor handle their own keys, so the list shortcuts must not run
+	if appData.editOpen {
+		if GetFrameInput().Key == KeyS && ActiveCombo() == Combo(KeyS, PrimaryMod()) {
+			commitEdit()
+		}
+	} else if !appData.pasteOpen {
 		switch GetFrameInput().Key {
 		case KeyEnter:
 			if appData.listFocus {
@@ -429,6 +562,9 @@ func RootView() {
 		StatusBar()
 	})
 
+	if appData.editOpen {
+		editModal()
+	}
 	if appData.pasteOpen {
 		pasteModal()
 	}
@@ -480,6 +616,10 @@ func Toolbar() {
 func ParamsPanel() {
 	a := appData.selected
 	if a == nil || len(a.Parameters()) == 0 {
+		return
+	}
+	// editor actions collect their content in the document editor modal
+	if _, ok := a.(action.Editor); ok {
 		return
 	}
 	Container(Attrs(Row, Expand, CrossMid, Gap(10), Pad2(2, 14), Wrap), func() {
@@ -565,11 +705,24 @@ func OutputPane() {
 			Label(dataSummary(), FontSize(11), TextColorVec(theme.rowDoc))
 		})
 		if appData.tab == 0 {
-			LargeText(appData.out.String(), TextColorVec(theme.outputText))
+			TextEditorStyled(&appData.outDoc, readOnlyEditorAttrs(),
+				editorStyle(theme.paneBg, theme.outputText, theme.fieldCaret), CurrentColorScheme.ScrollBar)
 		} else {
-			LargeText(string(appData.in), TextColorVec(theme.outputText))
+			TextEditorStyled(&appData.inDoc, readOnlyEditorAttrs(),
+				editorStyle(theme.paneBg, theme.outputText, theme.fieldCaret), CurrentColorScheme.ScrollBar)
 		}
 	})
+}
+
+// readOnlyEditorAttrs configures the right-pane document view: selectable and
+// copyable, but never editable, and it must not steal focus from the filter.
+func readOnlyEditorAttrs() TextEditorAttrs {
+	return TextEditorAttrs{
+		TextStyle:   TextStyle(Fonts(Monospace...), FontSize(12)),
+		LineNumbers: true,
+		ReadOnly:    true,
+		NoAutoFocus: true,
+	}
 }
 
 func tabButton(label string, tab int) {

@@ -51,7 +51,7 @@ func (a *editorAction) rebind(f Format) Action {
 
 var editAction = &editorAction{erased: &erased[[]byte, []byte]{
 	def: Definition[[]byte, []byte]{
-		Doc:          "Edit the entry in $EDITOR, non text entries are converted to text first",
+		Doc:          "Edit the entry, non text entries are converted to text first",
 		Names:        []string{"edit"},
 		Type:         TransformAction,
 		InputFormat:  TextFormat,

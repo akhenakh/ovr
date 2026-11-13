@@ -72,6 +72,10 @@ or the browser/wasm build), a paste popup opens so the input can be pasted
 directly. The popup can be reopened any time with the **Paste** toolbar
 button.
 
+The output pane is a read-only document view (line numbers, selection, copy),
+and the `edit` action opens the same editor over the app instead of launching
+an external `$EDITOR`.
+
 ## Web (wasm)
 
 ovrui compiles to GOOS=js/GOARCH=wasm and runs in the browser on shirei's
@@ -185,7 +189,7 @@ Tasks are defined in `Taskfile.yml` ([go-task](https://taskfile.dev)):
 - [ ] conversion (json, csv, yaml, toml)
 - [ ] output to a configurable filename, xxx-%Y%m%d.txt
 - [X] execute a shell command, input piped to stdin (`exec`)
-- [X] edit the entry in $EDITOR, non text entries are converted to text first (`edit`)
+- [X] edit the entry in $EDITOR (TUI) or the in-app editor (ovrui), non text entries are converted to text first (`edit`)
 - [ ] Colors, RGBtoHex, js names to colors
 - [X] WKB/WKT/GeoJSON (geometry)
 - [X] Geometry: area, centroid, timezone, 
