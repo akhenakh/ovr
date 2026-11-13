@@ -78,6 +78,10 @@ an external `$EDITOR`. The chain bar above the status bar shows every applied
 action as a bubble, oldest first, so applying and undoing is visible at a
 glance.
 
+The actions list owns the keyboard: arrow keys navigate and Enter picks or
+applies an action. Press `/` (or Tab) to jump to the filter field, Tab to
+toggle between the two, and Escape to clear the filter and return to the list.
+
 ## Web (wasm)
 
 ovrui compiles to GOOS=js/GOARCH=wasm and runs in the browser on shirei's

@@ -47,7 +47,11 @@ func TestPastePopupKeysDoNotTouchList(t *testing.T) {
 	resetPasteState()
 	t.Cleanup(resetPasteState)
 
+	appData.pasteOpen = true
+	appData.pasteBuf = "hello"
 	setInput([]byte("hello"))
+	// start from the filter so the focus assertion below is meaningful
+	appData.listFocus = false
 	openPaste()
 	pasteFrame(0)
 	pasteFrame(KeyEnter)

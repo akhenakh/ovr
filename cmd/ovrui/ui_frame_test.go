@@ -84,8 +84,8 @@ func TestFilterEnterActivatesList(t *testing.T) {
 		t.Fatalf("selected %q, want Tobase64", got)
 	}
 
-	// Enter again applies the selected action, resets the filter, and
-	// moves focus back to the filter field
+	// Enter again applies the selected action, resets the filter, and keeps
+	// the keyboard on the actions list
 	uiFrame(Vec2{-1000, -1000}, 0, KeyEnter)
 	if got := appData.out.String(); got != "aGVsbG8=" {
 		t.Fatalf("output is %q, want aGVsbG8=", got)
@@ -93,8 +93,8 @@ func TestFilterEnterActivatesList(t *testing.T) {
 	if appData.search != "" {
 		t.Fatalf("filter is %q, want empty", appData.search)
 	}
-	if appData.listFocus {
-		t.Fatal("focus did not return to the filter field")
+	if !appData.listFocus {
+		t.Fatal("focus did not stay on the actions list")
 	}
 }
 
@@ -104,22 +104,83 @@ func TestTabTogglesFilterAndList(t *testing.T) {
 	uiFrame(Vec2{-1000, -1000}, 0, 0)
 	uiFrame(Vec2{-1000, -1000}, 0, 0)
 
-	// Tab from the filter moves focus to the list without selecting anything
-	uiFrame(Vec2{-1000, -1000}, 0, KeyTab)
+	// the actions list owns the keyboard when input loads
 	if !appData.listFocus {
-		t.Fatal("Tab did not move focus to the actions list")
+		t.Fatal("startup focus is not on the actions list")
+	}
+	if IdHasFocus(appData.filterId) {
+		t.Fatal("filter field took focus at startup")
 	}
 	if appData.selected != nil {
-		t.Fatal("Tab must not select an action")
+		t.Fatal("startup must not select an action")
 	}
 
-	// Tab again returns focus to the filter field
+	// Tab moves focus to the filter field
 	uiFrame(Vec2{-1000, -1000}, 0, KeyTab)
 	if appData.listFocus {
-		t.Fatal("Tab did not move focus back to the filter field")
+		t.Fatal("Tab did not move focus to the filter field")
 	}
 	if !IdHasFocus(appData.filterId) {
 		t.Fatal("filter field does not hold keyboard focus")
+	}
+
+	// Tab again returns focus to the list
+	uiFrame(Vec2{-1000, -1000}, 0, KeyTab)
+	if !appData.listFocus {
+		t.Fatal("Tab did not move focus back to the actions list")
+	}
+}
+
+func TestSlashFocusesFilter(t *testing.T) {
+	setInput([]byte("hello"))
+
+	uiFrame(Vec2{-1000, -1000}, 0, 0)
+	uiFrame(Vec2{-1000, -1000}, 0, 0)
+
+	if !appData.listFocus {
+		t.Fatal("startup focus is not on the actions list")
+	}
+	appData.search = "zz"
+
+	// "/" on the list behaves like a search prompt: it focuses the filter
+	// without touching what is already typed there
+	uiFrame(Vec2{-1000, -1000}, 0, keySlash)
+	if appData.listFocus {
+		t.Fatal("/ did not move focus to the filter field")
+	}
+	if !IdHasFocus(appData.filterId) {
+		t.Fatal("filter field does not hold keyboard focus")
+	}
+	if appData.search != "zz" {
+		t.Fatalf("filter is %q, want zz", appData.search)
+	}
+	appData.search = ""
+}
+
+func TestEnterSelectsFirstAtStartup(t *testing.T) {
+	setInput([]byte("hello"))
+
+	uiFrame(Vec2{-1000, -1000}, 0, 0)
+	uiFrame(Vec2{-1000, -1000}, 0, 0)
+
+	if !appData.listFocus {
+		t.Fatal("startup focus is not on the actions list")
+	}
+	if appData.selected != nil {
+		t.Fatal("startup must not select an action")
+	}
+
+	// the first Enter on the list picks the first match, it does not apply
+	uiFrame(Vec2{-1000, -1000}, 0, KeyEnter)
+	list := filteredActions()
+	if appData.selected != list[0] {
+		t.Fatal("Enter did not select the first action")
+	}
+	if got := appData.out.String(); got != "hello" {
+		t.Fatalf("output is %q, enter must not apply yet", got)
+	}
+	if len(appData.out.Stack) != 0 {
+		t.Fatalf("stack has %d entries, want none", len(appData.out.Stack))
 	}
 }
 
@@ -129,13 +190,12 @@ func TestArrowsNavigateList(t *testing.T) {
 	uiFrame(Vec2{-1000, -1000}, 0, 0)
 	uiFrame(Vec2{-1000, -1000}, 0, 0)
 
-	// Tab focuses the list, then Down selects the first action
-	uiFrame(Vec2{-1000, -1000}, 0, KeyTab)
+	// the list already has the keyboard at startup
 	if !appData.listFocus {
-		t.Fatal("Tab did not move focus to the actions list")
+		t.Fatal("startup focus is not on the actions list")
 	}
 	if appData.selected != nil {
-		t.Fatal("Tab must not select an action")
+		t.Fatal("startup must not select an action")
 	}
 
 	uiFrame(Vec2{-1000, -1000}, 0, KeyDown)

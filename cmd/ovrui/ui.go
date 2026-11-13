@@ -15,6 +15,10 @@ import (
 
 type f32 = float32
 
+// keySlash is the physical "/" key: KeyCode carries US-QWERTY legends, so the
+// ASCII code is the identity even though shirei only names letters.
+const keySlash KeyCode = '/'
+
 // quitApp is indirected so tests can intercept the exit
 var quitApp = os.Exit
 
@@ -34,6 +38,8 @@ type AppState struct {
 	listFocus bool
 	// handle of the filter text field, captured each frame
 	filterId ContainerId
+	// handle of the right-pane document editor, captured each frame
+	paneEditorId ContainerId
 	// set to re-assert focus on the filter field during the next build pass
 	refocusFilter bool
 	// paste popup: shown at startup when no input came from a file, stdin,
@@ -163,7 +169,9 @@ func setInput(in []byte) {
 	appData.tab = 0
 	appData.status = ""
 	appData.isErr = false
-	appData.listFocus = false
+	// the actions list is the home position when input loads
+	appData.listFocus = true
+	appData.refocusFilter = false
 	appData.editOpen = false
 	appData.editAction = nil
 	syncDocs()
@@ -247,8 +255,8 @@ func setStatus(msg string, isErr bool) {
 	appData.isErr = isErr
 }
 
-// focusList moves keyboard focus from the filter field to the actions list
-// without changing the selection.
+// focusList gives the keyboard to the actions list. The list is the home
+// position: startup, after applying, cancelling or clearing the filter.
 func focusList() {
 	appData.listFocus = true
 	ClearFocus()
@@ -261,8 +269,8 @@ func activateList() {
 	selectFirst()
 }
 
-// exitListFocus moves keyboard focus back to the filter field.
-func exitListFocus() {
+// focusFilter gives the keyboard to the filter field, the "/" and Tab target.
+func focusFilter() {
 	appData.listFocus = false
 	appData.refocusFilter = true
 }
@@ -275,9 +283,9 @@ func applySelected() bool {
 	if !applyAction(appData.selected) {
 		return false
 	}
-	// applying from the list resets the filter and returns focus to it
+	// applying from the list resets the filter and keeps the keyboard there
 	appData.search = ""
-	exitListFocus()
+	focusList()
 	return true
 }
 
@@ -361,8 +369,8 @@ func startEditAction(a action.Action, ed action.Editor) {
 func cancelEdit() {
 	appData.editOpen = false
 	appData.editAction = nil
-	// return the keyboard to the filter field once the modal is gone
-	exitListFocus()
+	// the modal took the keyboard; hand it back to the actions list
+	focusList()
 	setStatus("edit cancelled", false)
 }
 
@@ -377,8 +385,8 @@ func commitEdit() {
 	content := appData.editDoc.Text()
 	appData.editOpen = false
 	appData.editAction = nil
-	// return the keyboard to the filter field once the modal is gone
-	exitListFocus()
+	// the modal took the keyboard; hand it back to the actions list
+	focusList()
 	if err := a.SetInputParameters(content); err != nil {
 		setStatus(err.Error(), true)
 		return
@@ -528,7 +536,13 @@ func RootView() {
 		switch GetFrameInput().Key {
 		case KeyEnter:
 			if appData.listFocus {
-				applySelected()
+				// on the list, Enter picks the first match or applies the
+				// current selection
+				if appData.selected == nil {
+					selectFirst()
+				} else {
+					applySelected()
+				}
 			} else {
 				// Enter in the filter field activates the actions list
 				activateList()
@@ -536,7 +550,7 @@ func RootView() {
 		case KeyTab:
 			// Tab toggles between the filter field and the actions list
 			if appData.listFocus {
-				exitListFocus()
+				focusFilter()
 			} else {
 				focusList()
 			}
@@ -544,9 +558,14 @@ func RootView() {
 			if appData.listFocus {
 				moveSelection(GetFrameInput().Key == KeyDown)
 			}
+		case keySlash:
+			// "/" jumps from the list to the filter, like a search prompt
+			if appData.listFocus {
+				focusFilter()
+			}
 		case KeyEscape:
 			appData.search = ""
-			exitListFocus()
+			focusList()
 		case KeyQ:
 			if ActiveCombo() == Combo(KeyQ, PrimaryMod()) {
 				quitApp(0)
@@ -587,7 +606,14 @@ func Header() {
 
 func Toolbar() {
 	Container(Attrs(Row, Expand, CrossMid, Gap(8), Pad2(8, 14)), func() {
-		themedTextInput(&appData.search, TextInputAttrs{Placeholder: "filter actions…", MaxWidth: 340, MaxLines: 1})
+		themedTextInput(&appData.search, TextInputAttrs{
+			Placeholder: "filter actions…",
+			MaxWidth:    340,
+			MaxLines:    1,
+			// the actions list owns the keyboard at startup; focus reaches
+			// the field through "/", Tab or a click
+			NoAutoFocus: true,
+		})
 		appData.filterId = GetLastId()
 		// clicking into the field returns keyboard focus mode to the filter
 		if IdReceivedFocusNow(appData.filterId) {
@@ -683,7 +709,8 @@ func actionRow(a action.Action) {
 		}
 		if IsClicked() {
 			selectAction(a)
-			appData.listFocus = true
+			// clicking a row takes the keyboard back from the filter field
+			focusList()
 		}
 		if IsDoubleClicked() {
 			applySelected()
@@ -714,6 +741,12 @@ func OutputPane() {
 		} else {
 			TextEditorStyled(&appData.inDoc, readOnlyEditorAttrs(),
 				editorStyle(theme.paneBg, theme.outputText, theme.fieldCaret), CurrentColorScheme.ScrollBar)
+		}
+		// selecting text in the pane moves the keyboard there: list shortcuts
+		// must not also react to the same arrow keys
+		appData.paneEditorId = GetLastId()
+		if IdReceivedFocusNow(appData.paneEditorId) {
+			appData.listFocus = false
 		}
 	})
 }
@@ -812,7 +845,7 @@ func StatusBar() {
 				Label(appData.status, FontSize(12), TextColorVec(theme.statusOK))
 			}
 		} else {
-			Label("Enter selects · ↑↓ navigate · Enter applies · Tab toggles filter/list · Esc clears the filter · "+quitHint(), FontSize(11), TextColorVec(theme.statusHint))
+			Label("↑↓ navigate · Enter selects/applies · / or Tab filters · Esc clears the filter · "+quitHint(), FontSize(11), TextColorVec(theme.statusHint))
 		}
 	})
 }
