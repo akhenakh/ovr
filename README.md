@@ -74,7 +74,9 @@ button.
 
 The output pane is a read-only document view (line numbers, selection, copy),
 and the `edit` action opens the same editor over the app instead of launching
-an external `$EDITOR`.
+an external `$EDITOR`. The chain bar above the status bar shows every applied
+action as a bubble, oldest first, so applying and undoing is visible at a
+glance.
 
 ## Web (wasm)
 

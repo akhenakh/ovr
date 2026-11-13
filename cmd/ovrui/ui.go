@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/akhenakh/ovr/action"
 
@@ -294,17 +295,19 @@ func applyAction(a action.Action) bool {
 		}
 		values := make([]any, len(params))
 		for i, p := range params {
-			v := strings.TrimSpace(appData.paramBuf[i])
+			// string parameters are literal (a space is a valid split
+			// separator); only numbers ignore surrounding blanks
+			v := appData.paramBuf[i]
 			switch p.ActionParameterType {
 			case action.IntParameter:
-				n, err := strconv.Atoi(v)
+				n, err := strconv.Atoi(strings.TrimSpace(v))
 				if err != nil {
 					setStatus(fmt.Sprintf("%s: %s needs an integer", a.Title(), p.Doc), true)
 					return false
 				}
 				values[i] = n
 			case action.FloatParameter:
-				f, err := strconv.ParseFloat(v, 64)
+				f, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
 				if err != nil {
 					setStatus(fmt.Sprintf("%s: %s needs a number", a.Title(), p.Doc), true)
 					return false
@@ -559,6 +562,7 @@ func RootView() {
 			ActionsPane()
 			OutputPane()
 		})
+		ChainBar()
 		StatusBar()
 	})
 
@@ -744,6 +748,61 @@ func tabButton(label string, tab int) {
 	})
 }
 
+// ChainBar shows the actions applied so far as blue bubbles, oldest first.
+// It keeps a fixed height so applying or undoing does not resize the panes.
+func ChainBar() {
+	Container(Attrs(Row, Expand, CrossMid, Gap(6), Pad2(4, 12), FixHeight(32), Clip), func() {
+		stack := appData.out.Stack
+		if len(stack) == 0 {
+			Label("no transformations applied", FontSize(11), TextColorVec(theme.emptyText))
+			return
+		}
+		for _, a := range stack {
+			chainBubble(a)
+		}
+	})
+}
+
+func chainBubble(a action.Action) {
+	Container(Attrs(Row, CrossMid, Pad2(3, 10), Corners(10), Clip, BackgroundVec(theme.tabActiveBg)), func() {
+		Label(chainLabel(a), FontSize(11), TextColorVec(theme.tabActiveText))
+	})
+}
+
+// chainParamMax caps how much of a parameter a bubble shows: edit stores the
+// whole edited text as a parameter.
+const chainParamMax = 32
+
+// chainLabel renders one stack entry as "Title(param, param)".
+func chainLabel(a action.Action) string {
+	label := a.Title()
+	params := a.InputParameters()
+	if len(params) == 0 {
+		return label
+	}
+	parts := make([]string, len(params))
+	for i, p := range params {
+		if s, ok := p.(string); ok {
+			parts[i] = strconv.Quote(truncateBytes(s, chainParamMax))
+		} else {
+			parts[i] = truncateBytes(fmt.Sprint(p), chainParamMax)
+		}
+	}
+	return label + "(" + strings.Join(parts, ", ") + ")"
+}
+
+// truncateBytes shortens s to at most n bytes on a rune boundary.
+func truncateBytes(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	cut := n
+	for cut > 0 && !utf8.RuneStart(s[cut]) {
+		cut--
+	}
+	return s[:cut] + "…"
+}
+
 func StatusBar() {
 	Container(Attrs(Row, Expand, CrossMid, Gap(8), Pad2(6, 14)), func() {
 		if appData.status != "" {
@@ -755,7 +814,5 @@ func StatusBar() {
 		} else {
 			Label("Enter selects · ↑↓ navigate · Enter applies · Tab toggles filter/list · Esc clears the filter · "+quitHint(), FontSize(11), TextColorVec(theme.statusHint))
 		}
-		Filler(1)
-		Label(appData.out.StackString(), FontSize(11), TextColorVec(theme.statusInfo))
 	})
 }
