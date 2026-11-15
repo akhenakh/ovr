@@ -108,7 +108,11 @@ func TestAction_RepeatFromTimeData(t *testing.T) {
 	tl, ok := tlout.Value.([]string)
 	require.True(t, ok)
 	require.Len(t, tl, 2)
-	_, err = time.Parse("2006-01-02 15:04:05 -0700 MST", strings.Split(tl[0], " m=+")[0])
+	// the zone abbreviation is host dependent (node reports UTC-5 on wasm),
+	// so cut it and parse on the numeric offset only
+	s, _, _ := strings.Cut(tl[0], " m=+")
+	s = s[:strings.LastIndex(s, " ")]
+	_, err = time.Parse("2006-01-02 15:04:05.999999999 -0700", s)
 	require.NoError(t, err)
 }
 
