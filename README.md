@@ -94,7 +94,9 @@ Backspace to remove the last applied action.
 ## Web (wasm)
 
 ovrui compiles to GOOS=js/GOARCH=wasm and runs in the browser on shirei's
-jsbackend (software renderer over a canvas, no plugins):
+jsbackend (software renderer over a canvas, no plugins). The `edit` action
+works there too: the in-app editor replaces `$EDITOR`. Only `exec` stays
+desktop-only, since the browser has no shell.
 
 ```sh
 task web          # build the site into docs/ (main.wasm, wasm_exec.js, .headers, embed.js) + landing page

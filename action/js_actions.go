@@ -2,9 +2,10 @@
 
 package action
 
-// The browser has no external processes: no $EDITOR and no shell, so the
-// edit and exec actions are not registered on wasm builds.
+// The browser has no shell, so exec is not registered on wasm builds. The
+// edit action is: ovrui provides the in-app document editor in place of
+// $EDITOR, so the action is usable in the browser too.
 
-var editorActions = []Action{}
+var editorActions = []Action{editAction}
 
 var execActions = []Action{}
