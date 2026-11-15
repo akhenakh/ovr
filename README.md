@@ -11,6 +11,14 @@ With [Homebrew](https://brew.sh) (Linux and macOS, formulas from [akhenakh/homeb
 brew install akhenakh/tap/ovr
 ```
 
+On Arch Linux, from the [AUR](https://aur.archlinux.org/packages/ovr) — both
+`ovr` and `ovrui` are installed:
+```sh
+yay -S ovr
+# or
+paru -S ovr
+```
+
 Or from source (requires Go 1.27):
 ```sh
 go build -o ovr ./cmd/ovr
