@@ -28,16 +28,11 @@ sha() {
 
 DARWIN_AMD64="$(sha "${BIN}_Darwin_x86_64.tar.gz")"
 DARWIN_ARM64="$(sha "${BIN}_Darwin_arm64.tar.gz")"
-LINUX_AMD64="$(sha "${BIN}_Linux_x86_64.tar.gz")"
-LINUX_ARM64="$(sha "${BIN}_Linux_arm64.tar.gz")"
 
 UIBIN="ovrui"
 UI_DARWIN_ARM64="$(sha "${UIBIN}_Darwin_arm64.tar.gz")"
-UI_LINUX_AMD64="$(sha "${UIBIN}_Linux_x86_64.tar.gz")"
-UI_LINUX_ARM64="$(sha "${UIBIN}_Linux_arm64.tar.gz")"
 
-for v in DARWIN_AMD64 DARWIN_ARM64 LINUX_AMD64 LINUX_ARM64 \
-         UI_DARWIN_ARM64 UI_LINUX_AMD64 UI_LINUX_ARM64; do
+for v in DARWIN_AMD64 DARWIN_ARM64 UI_DARWIN_ARM64; do
   if [[ -z "${!v}" ]]; then
     echo "error: missing checksum for ${v}" >&2
     exit 1
@@ -51,12 +46,17 @@ cat > "$TMP/${BIN}.rb" <<EOF
 class ${CLASS} < Formula
   desc "${DESC}"
   homepage "https://github.com/${REPO}"
+  # Apple Silicon is the default; on_intel overrides it.
+  url "https://github.com/${REPO}/releases/download/${TAG}/${BIN}_Darwin_arm64.tar.gz"
+  sha256 "${DARWIN_ARM64}"
   license "${LICENSE}"
+
+  # Homebrew on Linux is not supported; Linux users install the release
+  # tarball directly.
+  depends_on :macos
 
   on_macos do
     on_arm do
-      url "https://github.com/${REPO}/releases/download/${TAG}/${BIN}_Darwin_arm64.tar.gz"
-      sha256 "${DARWIN_ARM64}"
       resource "ovrui" do
         version "${TAG}"
         url "https://github.com/${REPO}/releases/download/${TAG}/${UIBIN}_Darwin_arm64.tar.gz"
@@ -69,34 +69,9 @@ class ${CLASS} < Formula
     end
   end
 
-  on_linux do
-    on_arm do
-      url "https://github.com/${REPO}/releases/download/${TAG}/${BIN}_Linux_arm64.tar.gz"
-      sha256 "${LINUX_ARM64}"
-      resource "ovrui" do
-        version "${TAG}"
-        url "https://github.com/${REPO}/releases/download/${TAG}/${UIBIN}_Linux_arm64.tar.gz"
-        sha256 "${UI_LINUX_ARM64}"
-      end
-    end
-    on_intel do
-      url "https://github.com/${REPO}/releases/download/${TAG}/${BIN}_Linux_x86_64.tar.gz"
-      sha256 "${LINUX_AMD64}"
-      resource "ovrui" do
-        version "${TAG}"
-        url "https://github.com/${REPO}/releases/download/${TAG}/${UIBIN}_Linux_x86_64.tar.gz"
-        sha256 "${UI_LINUX_AMD64}"
-      end
-    end
-  end
-
   def install
     bin.install "ovr"
-    if OS.mac? && Hardware::CPU.arm?
-      resource("ovrui").stage { bin.install "ovrui" }
-    elsif OS.linux?
-      resource("ovrui").stage { bin.install "ovrui" }
-    end
+    resource("ovrui").stage { bin.install "ovrui" } if Hardware::CPU.arm?
   end
 
   test do
